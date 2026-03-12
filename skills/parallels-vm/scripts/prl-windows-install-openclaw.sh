@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/prl-windows-lib.sh"
 
 usage() {
-  echo "usage: $(basename "$0") <vm-name> [--version <version|tag>] [--install-url <url>] [--method npm|git] [--git-dir <dir>] [--with-onboard]" >&2
+  echo "usage: $(basename "$0") <vm-name> [--version <version|tag>] [--spec <npm-spec-or-url>] [--install-url <url>] [--method npm|git] [--git-dir <dir>] [--with-onboard]" >&2
   exit 64
 }
 
@@ -16,6 +16,7 @@ vm=$1
 shift
 
 version=latest
+spec=
 install_url=https://openclaw.ai/install.ps1
 method=npm
 git_dir=
@@ -25,6 +26,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --version)
       version=${2:?missing version}
+      shift 2
+      ;;
+    --spec)
+      spec=${2:?missing spec}
       shift 2
       ;;
     --install-url)
@@ -56,7 +61,11 @@ esac
 
 prl_windows_require_prlctl
 
-script=$(prl_windows_build_install_script "$install_url" "$version" "$method" "$git_dir" "$no_onboard")
+if [[ -n "$spec" ]]; then
+  script=$(prl_windows_build_npm_install_script "$spec")
+else
+  script=$(prl_windows_build_install_script "$install_url" "$version" "$method" "$git_dir" "$no_onboard")
+fi
 raw="$(prl_windows_exec_ps_script "$vm" "$script" 2>&1)"
 cleaned="$(printf '%s\n' "$raw" | prl_windows_strip_clixml)"
 if [[ -n "${cleaned//$'\n'/}" ]]; then

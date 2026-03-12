@@ -137,6 +137,35 @@ process.stdout.write(lines.join("\n"));
 EOF
 }
 
+prl_windows_build_npm_install_script() {
+  local spec=$1
+
+  /opt/homebrew/bin/node - "$spec" <<'EOF'
+const [spec] = process.argv.slice(2);
+const ps = (value) => "'" + String(value).replace(/'/g, "''") + "'";
+
+process.stdout.write(`$portableRoot = Join-Path $env:LOCALAPPDATA "OpenClaw\\deps\\portable-git"
+$portableEntries = @(
+  (Join-Path $portableRoot "mingw64\\bin"),
+  (Join-Path $portableRoot "usr\\bin"),
+  (Join-Path $portableRoot "cmd"),
+  (Join-Path $portableRoot "bin")
+) | Where-Object { Test-Path $_ }
+if ($portableEntries.Count -gt 0) {
+  $env:Path = (($portableEntries + @($env:Path)) -join ";")
+}
+$env:NPM_CONFIG_LOGLEVEL = "error"
+$env:NPM_CONFIG_UPDATE_NOTIFIER = "false"
+$env:NPM_CONFIG_FUND = "false"
+$env:NPM_CONFIG_AUDIT = "false"
+$env:NPM_CONFIG_SCRIPT_SHELL = "cmd.exe"
+$env:NODE_LLAMA_CPP_SKIP_DOWNLOAD = "1"
+& npm.cmd install -g ${ps(spec)} --force --no-fund --no-audit --loglevel=error
+exit $LASTEXITCODE
+`);
+EOF
+}
+
 prl_windows_parse_openclaw_version() {
   local raw=$1
   local version

@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/prl-windows-lib.sh"
 
 usage() {
-  echo "usage: $(basename "$0") <vm-name> [--from-version <version>] [--to-tag <tag>] [--install-url <url>]" >&2
+  echo "usage: $(basename "$0") <vm-name> [--from-version <version>] [--from-spec <npm-spec-or-url>] [--to-tag <tag>] [--update-spec <npm-spec-or-url>] [--install-url <url>]" >&2
   exit 64
 }
 
@@ -16,7 +16,9 @@ vm=$1
 shift
 
 from_version=2026.3.7
+from_spec=
 to_tag=latest
+update_spec=
 install_url=https://openclaw.ai/install.ps1
 tmp_dir=
 
@@ -26,8 +28,16 @@ while [[ $# -gt 0 ]]; do
       from_version=${2:?missing version}
       shift 2
       ;;
+    --from-spec)
+      from_spec=${2:?missing from spec}
+      shift 2
+      ;;
     --to-tag)
       to_tag=${2:?missing tag}
+      shift 2
+      ;;
+    --update-spec)
+      update_spec=${2:?missing update spec}
       shift 2
       ;;
     --install-url)
@@ -53,7 +63,11 @@ capture_gateway_status() {
 
 capture_update() {
   set +e
-  raw="$("$SCRIPT_DIR/prl-windows-openclaw.sh" "$vm" update --tag "$to_tag" --yes --json 2>&1)"
+  if [[ -n "$update_spec" ]]; then
+    raw="$("$SCRIPT_DIR/prl-windows-openclaw.sh" "$vm" --env "OPENCLAW_UPDATE_PACKAGE_SPEC=$update_spec" update --yes --json 2>&1)"
+  else
+    raw="$("$SCRIPT_DIR/prl-windows-openclaw.sh" "$vm" update --tag "$to_tag" --yes --json 2>&1)"
+  fi
   status=$?
   set -e
   printf '%s\n' "$raw" | /opt/homebrew/bin/node -e '
@@ -85,7 +99,11 @@ process.stdout.write(JSON.stringify({
 ' "$status"
 }
 
-before_install="$("$SCRIPT_DIR/prl-windows-install-openclaw.sh" "$vm" --version "$from_version" --install-url "$install_url" 2>/dev/null)"
+if [[ -n "$from_spec" ]]; then
+  before_install="$("$SCRIPT_DIR/prl-windows-install-openclaw.sh" "$vm" --spec "$from_spec" 2>/dev/null)"
+else
+  before_install="$("$SCRIPT_DIR/prl-windows-install-openclaw.sh" "$vm" --version "$from_version" --install-url "$install_url" 2>/dev/null)"
+fi
 before_cli_version="$(prl_windows_parse_openclaw_version "$before_install")"
 before_status="$(capture_gateway_status)"
 
@@ -106,9 +124,9 @@ printf '%s\n' "$before_status" >"$tmp_dir/before-status.json"
 printf '%s\n' "$update_json" >"$tmp_dir/update.json"
 printf '%s\n' "$after_status" >"$tmp_dir/after-status.json"
 
-/opt/homebrew/bin/node - "$tmp_dir/before-status.json" "$tmp_dir/update.json" "$tmp_dir/after-status.json" "$before_cli_version" "$after_cli_version" <<'EOF'
+/opt/homebrew/bin/node - "$tmp_dir/before-status.json" "$tmp_dir/update.json" "$tmp_dir/after-status.json" "$before_cli_version" "$after_cli_version" "$update_spec" <<'EOF'
 const fs = require("fs");
-const [beforePath, updatePath, afterPath, beforeCliVersion, afterCliVersion] = process.argv.slice(2);
+const [beforePath, updatePath, afterPath, beforeCliVersion, afterCliVersion, updateSpec] = process.argv.slice(2);
 const beforeStatus = JSON.parse(fs.readFileSync(beforePath, "utf8"));
 const update = JSON.parse(fs.readFileSync(updatePath, "utf8"));
 const afterStatus = JSON.parse(fs.readFileSync(afterPath, "utf8"));
@@ -146,6 +164,7 @@ process.stdout.write(JSON.stringify({
     ok: update.ok === true,
     beforeVersion: update.beforeVersion ?? null,
     afterVersion: update.afterVersion ?? null,
+    spec: updateSpec || null,
     error: update.error ?? null,
   },
   after: {
