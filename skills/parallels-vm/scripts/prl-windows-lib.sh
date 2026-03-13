@@ -251,7 +251,8 @@ prl_windows_run_openclaw_prefix_env() {
   env_json=$(prl_windows_json_array "${env_args[@]}")
   args_json=$(prl_windows_json_array "$@")
   script=$(prl_windows_build_module_runner "$prefix" "$env_json" "$args_json")
-  prlctl exec "$vm" "C:\\Program Files\\nodejs\\node.exe" --input-type=module -e "$script" 2>&1
+  prl_windows_wait_for_user_session "$vm"
+  prlctl exec "$vm" --current-user "C:\\Program Files\\nodejs\\node.exe" --input-type=module -e "$script" 2>&1
 }
 
 prl_windows_build_install_script() {
