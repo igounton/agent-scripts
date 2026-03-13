@@ -19,8 +19,27 @@ esac
 repo_dir=$1
 shift
 
+detect_host_ip() {
+  local explicit="${PRL_HOST_IP:-}"
+  if [[ -n "$explicit" ]]; then
+    printf '%s\n' "$explicit"
+    return 0
+  fi
+  /sbin/ifconfig 2>/dev/null | awk '
+    /^[a-z0-9]+: / {
+      iface=$1
+      sub(/:$/, "", iface)
+      next
+    }
+    $1 == "inet" && iface ~ /^vnic/ && $2 != "127.0.0.1" {
+      print $2
+      exit 0
+    }
+  '
+}
+
 port=8141
-host=10.211.55.2
+host=
 out_dir=/private/tmp
 json_mode=0
 
@@ -47,6 +66,14 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -z "$host" ]]; then
+  host="$(detect_host_ip || true)"
+fi
+[[ -n "$host" ]] || {
+  echo "error: could not detect a Parallels host IP; pass --host <host-ip> or set PRL_HOST_IP" >&2
+  exit 1
+}
 
 [[ -d "$repo_dir" ]] || { echo "error: repo dir not found: $repo_dir" >&2; exit 1; }
 [[ -f "$repo_dir/package.json" ]] || { echo "error: package.json not found under: $repo_dir" >&2; exit 1; }

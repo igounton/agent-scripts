@@ -1,11 +1,11 @@
 ---
 name: parallels-vm
-description: Automate and verify Parallels Desktop guests on Peter's Mac. Covers `prlctl` lifecycle/snapshots/screenshots, guest command execution, website installs, OpenClaw release smoke runs from `openclaw.ai`, macOS/Linux/Windows guest verification wrappers, native Windows no-admin Git bootstrap, SSH bootstrap, and optional Peekaboo GUI automation.
+description: Automate and verify Parallels Desktop guests on a macOS host. Covers `prlctl` lifecycle/snapshots/screenshots, guest command execution, website installs, OpenClaw release smoke runs from `openclaw.ai`, macOS/Linux/Windows guest verification wrappers, native Windows no-admin Git bootstrap, SSH bootstrap, and optional Peekaboo GUI automation.
 ---
 
 # Parallels Desktop
 
-Use this skill for Parallels VM work on Peter's Mac.
+Use this skill for Parallels VM work on a macOS host.
 
 Guest OS split:
 
@@ -19,7 +19,7 @@ Primary tools:
 - `prlctl` for power, snapshots, guest exec, guest screenshots, VM info
 - `peekaboo` for host-side GUI automation of the Parallels app/window
 - `ssh` / Screen Sharing / RDP inside the guest for robust control
-- helper wrappers live in `~/Projects/agent-scripts/skills/parallels-vm/scripts/`; they are not copied into each target repo's `scripts/`
+- helper wrappers live alongside this skill under `scripts/`; they are not copied into each target repo's `scripts/`
 
 ## Fast Path
 
@@ -113,7 +113,7 @@ When the task is about OpenClaw install/update verification, prefer the OS-match
 ## Core Commands
 
 ```bash
-VM="macOS Tahoe"
+VM="<macos-vm-name>"
 
 prlctl start "$VM"
 prlctl status "$VM"
@@ -130,8 +130,8 @@ prlctl snapshot-delete "$VM" --id <snapshot-id>
 Helper examples:
 
 ```bash
-VM="macOS Tahoe"
-REPO="/Users/steipete/Projects/openclaw-parallels-gpt54"
+VM="<macos-vm-name>"
+REPO="$HOME/Projects/openclaw-parallels"
 
 scripts/prl-macos-pnpm.sh "$VM" "$REPO" install
 scripts/prl-macos-pnpm.sh "$VM" "$REPO" build
@@ -144,7 +144,7 @@ scripts/prl-macos-live-auth-seed.sh "$VM"
 scripts/prl-macos-vitest.sh "$VM" "$REPO" --env "OPENCLAW_LIVE_MODELS=openai/gpt-5.4,anthropic/claude-opus-4-6" --env "OPENCLAW_LIVE_TEST=1" --env "CLAWDBOT_LIVE_TEST=1" --env "OPENAI_API_KEY=$OPENAI_API_KEY" --env "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" -- run --config vitest.live.config.ts src/agents/models.profiles.live.test.ts
 scripts/prl-macos-vitest.sh "$VM" "$REPO" --env "OPENCLAW_LIVE_GATEWAY_MODELS=openai/gpt-5.4,anthropic/claude-opus-4-6" --env "OPENCLAW_LIVE_TEST=1" --env "CLAWDBOT_LIVE_TEST=1" --env "OPENAI_API_KEY=$OPENAI_API_KEY" --env "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" -- run --config vitest.live.config.ts src/gateway/gateway-models.profiles.live.test.ts
 scripts/prl-macos-install-openclaw.sh "$VM" --version 2026.3.7
-SPEC="$(scripts/prl-host-serve-openclaw.sh ~/Projects/clawdbot5)"
+SPEC="$(scripts/prl-host-serve-openclaw.sh "$PWD")"
 scripts/prl-macos-install-openclaw.sh "$VM" --spec "$SPEC"
 scripts/prl-openclaw-smoke.sh "$VM" --install-spec "$SPEC" --openai-api-key-env OPENAI_API_KEY --json
 scripts/prl-macos-gateway-status-version.sh "$VM" --json
@@ -159,13 +159,13 @@ VM="Windows 11"
 source ~/.profile >/dev/null 2>&1
 scripts/prl-openclaw-smoke.sh "$VM" --openai-api-key-env OPENAI_API_KEY --model openai/gpt-5.4 --json
 scripts/prl-openclaw-smoke.sh "$VM" --install-version latest --openai-api-key-env OPENAI_API_KEY --model openai/gpt-5.4 --json
-scripts/prl-openclaw-smoke.sh "$VM" --install-spec "http://10.211.55.2:8138/openclaw-next.tgz" --prefix "$PREFIX" --openai-api-key-env OPENAI_API_KEY --model openai/gpt-5.4 --json
+scripts/prl-openclaw-smoke.sh "$VM" --install-spec "http://<host-ip>:8138/openclaw-next.tgz" --prefix "$PREFIX" --openai-api-key-env OPENAI_API_KEY --model openai/gpt-5.4 --json
 scripts/prl-openclaw-smoke.sh "$VM" --overlay-source-dir "C:\Mac\Home\Desktop\openclaw-next-package\package" --openai-api-key-env OPENAI_API_KEY --model openai/gpt-5.4 --json
 scripts/prl-windows-install-openclaw.sh "$VM" --version latest
-scripts/prl-windows-install-openclaw.sh "$VM" --spec "http://10.211.55.2:8138/openclaw-next.tgz"
-PREFIX='C:\Users\steipete\AppData\Local\Temp\openclaw-next'
-scripts/prl-windows-install-openclaw.sh "$VM" --spec "http://10.211.55.2:8138/openclaw-next.tgz" --prefix "$PREFIX"
-scripts/prl-windows-overlay-openclaw.sh "$VM" --spec "http://10.211.55.2:8138/openclaw-next.tgz"
+scripts/prl-windows-install-openclaw.sh "$VM" --spec "http://<host-ip>:8138/openclaw-next.tgz"
+PREFIX='C:\Users\<user>\AppData\Local\Temp\openclaw-next'
+scripts/prl-windows-install-openclaw.sh "$VM" --spec "http://<host-ip>:8138/openclaw-next.tgz" --prefix "$PREFIX"
+scripts/prl-windows-overlay-openclaw.sh "$VM" --spec "http://<host-ip>:8138/openclaw-next.tgz"
 scripts/prl-windows-overlay-openclaw.sh "$VM" --source-dir "C:\Mac\Home\Desktop\openclaw-next-package\package"
 scripts/prl-windows-openclaw.sh "$VM" --version
 scripts/prl-windows-openclaw.sh "$VM" --prefix "$PREFIX" --version
@@ -177,9 +177,9 @@ scripts/prl-windows-onboard-verify.sh "$VM" --openai-api-key-env OPENAI_API_KEY 
 scripts/prl-windows-onboard-verify.sh "$VM" --prefix "$PREFIX" --openai-api-key-env OPENAI_API_KEY --hatch --json
 scripts/prl-windows-openclaw-update-verify.sh "$VM" --from-version 2026.3.7 --to-tag latest
 scripts/prl-windows-openclaw-update-verify.sh "$VM" --from-version 2026.3.7 --skip-install
-scripts/prl-windows-openclaw-update-verify.sh "$VM" --from-spec "http://10.211.55.2:8138/openclaw-a.tgz" --update-spec "http://10.211.55.2:8138/openclaw-b.tgz"
-scripts/prl-windows-openclaw-update-verify.sh "$VM" --prefix "$PREFIX" --from-spec "http://10.211.55.2:8138/openclaw-a.tgz" --update-spec "http://10.211.55.2:8138/openclaw-b.tgz"
-scripts/prl-windows-openclaw-update-verify.sh "$VM" --from-version 2026.3.7 --update-spec "http://10.211.55.2:8138/openclaw-next.tgz"
+scripts/prl-windows-openclaw-update-verify.sh "$VM" --from-spec "http://<host-ip>:8138/openclaw-a.tgz" --update-spec "http://<host-ip>:8138/openclaw-b.tgz"
+scripts/prl-windows-openclaw-update-verify.sh "$VM" --prefix "$PREFIX" --from-spec "http://<host-ip>:8138/openclaw-a.tgz" --update-spec "http://<host-ip>:8138/openclaw-b.tgz"
+scripts/prl-windows-openclaw-update-verify.sh "$VM" --from-version 2026.3.7 --update-spec "http://<host-ip>:8138/openclaw-next.tgz"
 scripts/prl-windows-openclaw.sh "$VM" --env "OPENAI_API_KEY=$OPENAI_API_KEY" agent --local --agent main --json --thinking low -m "Reply with exactly WINDOWS-HATCH-OK."
 scripts/prl-windows-openclaw.sh "$VM" --env "OPENAI_API_KEY=$OPENAI_API_KEY" agent --agent main --json --thinking low -m "Reply with exactly WINDOWS-GATEWAY-OK."
 ```
@@ -218,14 +218,14 @@ If the user wants stable local forwarding like `localhost:2222`, configure a Par
 For launchd-managed services on a macOS guest, use the guest console user, not root:
 
 ```bash
-VM="macOS Tahoe"
+VM="<macos-vm-name>"
 prlctl exec "$VM" --current-user 'whoami && echo HOME=$HOME && id -u'
 ```
 
 Gateway / launchd checks that worked well:
 
 ```bash
-VM="macOS Tahoe"
+VM="<macos-vm-name>"
 prlctl exec "$VM" --current-user 'label=ai.openclaw.gateway; domain=gui/$(id -u); plist=$HOME/Library/LaunchAgents/$label.plist; ls -l "$plist"; launchctl print "$domain/$label"'
 prlctl exec "$VM" --current-user 'launchctl print-disabled gui/$(id -u) | /usr/bin/grep -E "ai\\.openclaw|openclaw" || true'
 prlctl exec "$VM" --current-user 'lsof -nP -iTCP:18789 -sTCP:LISTEN || true'
@@ -238,26 +238,26 @@ Notes:
 - `curl http://127.0.0.1:<port>/health` and `lsof -iTCP:<port>` are more reliable than app-specific CLIs when PATH/env inside `prlctl exec` is broken
 - if a service CLI fails under `prlctl exec`, first verify whether the binary or its shebang target is missing from PATH before assuming the service is down
 
-OpenClaw/Tahoe notes:
+OpenClaw/macOS guest notes:
 
-- For OpenAI + Anthropic live model coverage, default to `OPENCLAW_LIVE_MODELS="openai/gpt-5.4,anthropic/claude-opus-4-6"` and `OPENCLAW_LIVE_GATEWAY_MODELS="openai/gpt-5.4,anthropic/claude-opus-4-6"` unless Peter asks for different models
+- For OpenAI + Anthropic live model coverage, default to `OPENCLAW_LIVE_MODELS="openai/gpt-5.4,anthropic/claude-opus-4-6"` and `OPENCLAW_LIVE_GATEWAY_MODELS="openai/gpt-5.4,anthropic/claude-opus-4-6"` unless the user asks for different models
 - When proving "what version is on main?" from a guest checkout, use `scripts/prl-macos-repo-openclaw.sh "$VM" "$REPO" --version`. `scripts/prl-macos-openclaw.sh "$VM" --version` only checks the guest-global install and may lag or be missing after snapshot restore.
 - After `snapshot-switch` / snapshot restore, assume guest repo checkouts and `auth-profiles.json` may be stale or gone. Recreate the checkout, pin it to the host commit under test, and reseed live auth before running gateway live tests.
 - Do not trust `prlctl exec` alone to judge installer environment parity on macOS guests. It can miss the interactive shell PATH/init state and falsely report things like missing Homebrew even when the real guest Terminal session sees `/opt/homebrew/bin/brew`.
-- Fresh Tahoe snapshot retest proved the latest stable website installer works in the real interactive guest Terminal: Homebrew is detected, install lands cleanly, and onboarding starts immediately after install. Use that path as the source of truth for `curl -fsSL https://openclaw.ai/install.sh | bash` validation.
+- Fresh macOS snapshot retests proved the latest stable website installer works in the real interactive guest Terminal: Homebrew is detected, install lands cleanly, and onboarding starts immediately after install. Use that path as the source of truth for `curl -fsSL https://openclaw.ai/install.sh | bash` validation.
 - For install smoke on a fresh macOS snapshot, it is normal for `command -v openclaw` to be empty before install. After install, if onboarding starts and the goal is version proof only, `Ctrl-C` the setup flow and run `openclaw --version` in the same guest shell.
 - Fresh macOS guests may have Homebrew `node` but no `pnpm`; install once with `/opt/homebrew/bin/node /opt/homebrew/lib/node_modules/npm/bin/npm-cli.js install -g pnpm`
 - `scripts/prl-macos-pnpm.sh` now auto-installs missing guest `pnpm` with the guest Homebrew `node`
-- Some Tahoe guests inherit permissive `umask` values (`000`); temp dirs/files can land as `0777`/`0666` and trip OpenClaw's world-writable plugin safety gates. If discovery/loader tests suddenly return no candidates, check permissions first before blaming cache/env logic.
-- Prefer argv-style guest commands (`git -C <repo> ...`, wrappers, absolute paths) over `prlctl exec ... sh -lc 'cd ... && ...'`; Tahoe shell-wrapped git commands were flaky here.
+- Some macOS guests inherit permissive `umask` values (`000`); temp dirs/files can land as `0777`/`0666` and trip OpenClaw's world-writable plugin safety gates. If discovery/loader tests suddenly return no candidates, check permissions first before blaming cache/env logic.
+- Prefer argv-style guest commands (`git -C <repo> ...`, wrappers, absolute paths) over `prlctl exec ... sh -lc 'cd ... && ...'`; shell-wrapped git commands on recent macOS guests were flaky here.
 - For guest Vitest, prefer `scripts/prl-macos-vitest.sh`; if you do it manually, use `pnpm exec vitest` and pass repo-root-relative test paths under `--root <repo>`.
 - For env-scoped guest `pnpm`/Vitest runs, reuse the shared wrapper/lib path (`prl_run_pnpm_env` via `scripts/prl-macos-vitest.sh`) instead of hand-writing `prlctl exec ... env ... node ... pnpm ...` each time.
 - `prlctl exec` is fine for argv-style commands; for pipes, heredocs, JSON blobs, or multiline shell work, switch to `scripts/prl-macos-enter.sh`
 - Website installer verification should use `scripts/prl-macos-install-openclaw.sh`, not raw `curl | bash` through `prlctl exec`
 - Gateway version verification should use `scripts/prl-macos-gateway-status-version.sh`; it strips pre-JSON warnings and reports `runtimeVersion` when present
-- Real release smoke should prefer `scripts/prl-macos-openclaw-update-verify.sh`; it now tolerates Tahoe `launchctl bootstrap ... Input/output error` by falling back to a detached manual gateway probe
-- Fresh Tahoe snapshots can start a launchd-managed gateway noticeably slower than a warm machine. On current OpenClaw, `onboard --install-daemon` should allow a longer daemon health window (~45s). If an older build still fails around ~15s but the gateway comes up shortly after, treat that as the old timeout bug, not a bad install.
-- Do not add an install-time `launchctl kickstart -k` after a successful `bootstrap` when debugging macOS LaunchAgents. `bootstrap` already loads `RunAtLoad` agents, and on Tahoe that extra kickstart can SIGTERM the first gateway process and delay real readiness.
+- Real release smoke should prefer `scripts/prl-macos-openclaw-update-verify.sh`; it now tolerates macOS guest `launchctl bootstrap ... Input/output error` by falling back to a detached manual gateway probe
+- Fresh macOS snapshots can start a launchd-managed gateway noticeably slower than a warm machine. On current OpenClaw, `onboard --install-daemon` should allow a longer daemon health window (~45s). If an older build still fails around ~15s but the gateway comes up shortly after, treat that as the old timeout bug, not a bad install.
+- Do not add an install-time `launchctl kickstart -k` after a successful `bootstrap` when debugging macOS LaunchAgents. `bootstrap` already loads `RunAtLoad` agents, and on slower guests that extra kickstart can SIGTERM the first gateway process and delay real readiness.
 - Released builds may still print `/dev/tty: Device not configured` during noninteractive installer tail work (`doctor` / plugin updates); treat that as a follow-up bug unless the requested version failed to land
 - If manual gateway probing is needed, first force `gateway.mode=local`; released builds can otherwise block startup with `set gateway.mode=local (current: unset) or pass --allow-unconfigured`
 - For listener checks, use `lsof -nP -iTCP:<port> -sTCP:LISTEN`; plain `lsof -i :<port>` is too noisy on Tahoe
@@ -308,8 +308,8 @@ OpenClaw/Windows notes:
   - embedded hatch can pass with only `OPENAI_API_KEY`
   - `onboard --non-interactive --accept-risk ...` still fails at the final loopback gateway probe if the Windows gateway service is not installed/running
 - If `gateway install` / `gateway status` are silent through `prlctl exec`, check the direct side effects before assuming failure:
-  - `type C:\Users\steipete\.openclaw\gateway.cmd`
-  - `if exist C:\Users\steipete\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\OpenClaw Gateway.cmd echo STARTUP_PRESENT`
+  - `type C:\Users\<user>\.openclaw\gateway.cmd`
+  - `if exist C:\Users\<user>\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\OpenClaw Gateway.cmd echo STARTUP_PRESENT`
   - `netstat -ano | findstr 18789`
   - if port `18789` is listening and `agent --agent main` returns, count the Windows gateway path as green even if `gateway status` is slow/noisy
 - Current published native Windows release (`openclaw@2026.3.11`) can install and report `openclaw --version`, but deeper CLI paths may still fail on Windows ARM with the released `@snazzah/davey` binding load problem
@@ -355,8 +355,3 @@ Best practice:
 - Need commands inside guest: use `prlctl exec` or `ssh`
 - Need desktop UI control: use guest-native remote control first, Peekaboo second
 - Need reproducible visual automation from the host: combine `prlctl capture` for read + Peekaboo for action, but warn about coordinate drift
-
-## Peter Notes
-
-- `peekaboo` is on PATH on this Mac.
-- `~/.codex/skills` points to `~/Projects/agent-scripts/skills`, so edits there are live for Codex.

@@ -72,7 +72,7 @@ cleanup() {
 trap cleanup EXIT
 
 if [[ -n "$profile" && -z "$state_dir" ]]; then
-  state_dir="/Users/steipete/.openclaw-$profile"
+  state_dir="$(prl_guest_home "$vm")/.openclaw-$profile"
 fi
 
 launchd_label=ai.openclaw.gateway

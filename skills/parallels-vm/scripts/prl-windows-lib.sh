@@ -337,3 +337,59 @@ prl_windows_wait_for_user_session() {
 
   prl_windows_die "guest user session not ready within ${timeout_s}s"
 }
+
+prl_windows_set_primary_model() {
+  local vm=$1
+  local model=$2
+
+  local model_js script
+  model_js=$(/opt/homebrew/bin/node -e "const s=process.argv[1].replace(/\\\\/g,'\\\\\\\\').replace(/'/g, \"\\\\'\"); process.stdout.write(\"'\" + s + \"'\")" "$model")
+  script=$(cat <<EOF
+const fs = require('fs');
+const path = `${process.env.USERPROFILE}/.openclaw/openclaw.json`;
+let raw = fs.readFileSync(path, 'utf8');
+raw = raw.replace(/^\uFEFF/, '');
+const cfg = JSON.parse(raw);
+cfg.agents ??= {};
+cfg.agents.defaults ??= {};
+cfg.agents.defaults.model ??= {};
+if (typeof cfg.agents.defaults.model === 'string') {
+  cfg.agents.defaults.model = { primary: $model_js };
+} else {
+  cfg.agents.defaults.model.primary = $model_js;
+}
+cfg.meta ??= {};
+cfg.meta.lastTouchedVersion = 'parallels-vm';
+fs.writeFileSync(path, JSON.stringify(cfg, null, 2));
+process.stdout.write(String(cfg.agents.defaults.model.primary) + '\\n');
+EOF
+)
+
+  prlctl exec "$vm" --current-user "C:\\Program Files\\nodejs\\node.exe" -e "$script"
+}
+
+prl_windows_start_gateway_detached() {
+  local vm=$1
+  local script
+  script=$(cat <<'EOF'
+Start-Process -FilePath "$env:USERPROFILE\.openclaw\gateway.cmd" -WindowStyle Hidden
+EOF
+)
+  prlctl exec "$vm" powershell.exe -NoProfile -EncodedCommand "$(printf '%s' "$script" | prl_windows_encode_ps)" >/dev/null 2>&1 || true
+}
+
+prl_windows_wait_for_gateway_port() {
+  local vm=$1
+  local port=${2:-18789}
+  local timeout_s=${3:-60}
+  local deadline=$((SECONDS + timeout_s))
+
+  while (( SECONDS < deadline )); do
+    if prlctl exec "$vm" cmd.exe /d /s /c "netstat -ano | findstr :$port" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 2
+  done
+
+  prl_windows_die "gateway port $port not listening within ${timeout_s}s"
+}
