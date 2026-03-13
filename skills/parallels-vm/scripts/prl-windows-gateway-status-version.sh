@@ -12,6 +12,12 @@ usage() {
 
 [[ $# -ge 1 ]] || usage
 
+case "${1:-}" in
+  -h|--help)
+    usage
+    ;;
+esac
+
 vm=$1
 shift
 
@@ -33,15 +39,21 @@ set +e
 raw="$("$SCRIPT_DIR/prl-windows-openclaw.sh" "$vm" gateway status --json 2>&1)"
 status=$?
 set -e
+json_raw=
+if json_raw=$(printf '%s\n' "$raw" | prl_windows_extract_json 2>/dev/null); then
+  :
+else
+  json_raw=
+fi
+raw_b64=$(printf '%s' "$raw" | /usr/bin/base64)
 
-summary="$(printf '%s\n' "$raw" | /opt/homebrew/bin/node -e '
+summary="$(printf '%s\n' "$json_raw" | /opt/homebrew/bin/node -e '
 const fs = require("fs");
-const input = fs.readFileSync(0, "utf8");
+const input = fs.readFileSync(0, "utf8").trim();
 const exitCode = Number(process.argv[1]);
-const lines = input.split(/\r?\n/);
-const start = lines.findIndex((line) => line.trim().startsWith("{"));
-if (start >= 0) {
-  const parsed = JSON.parse(lines.slice(start).join("\n"));
+const raw = Buffer.from(process.argv[2], "base64").toString("utf8");
+if (input) {
+  const parsed = JSON.parse(input);
   const listener = Array.isArray(parsed.port?.listeners) ? parsed.port.listeners[0] ?? null : null;
   process.stdout.write(JSON.stringify({
     runtimeVersion: parsed.runtimeVersion ?? null,
@@ -61,11 +73,11 @@ process.stdout.write(JSON.stringify({
   servicePid: null,
   listenerPid: null,
   port: null,
-  error: input.trim() || `command exited with ${exitCode}`,
+  error: raw.trim() || `command exited with ${exitCode}`,
   exitCode,
   raw: null,
 }));
-' "$status")"
+' "$status" "$raw_b64")"
 
 if [[ "$json_mode" == "1" ]]; then
   printf '%s\n' "$summary" | /opt/homebrew/bin/node -e '

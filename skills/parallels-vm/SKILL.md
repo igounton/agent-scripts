@@ -56,8 +56,8 @@ Reusable helpers:
 - `scripts/prl-macos-auth-seed.sh <vm> <local-auth-profiles.json|->`: seed `auth-profiles.json` into the guest with base64 transport
 - `scripts/prl-windows-install-openclaw.sh <vm> [--version latest] [--spec <npm-spec-or-url>]`: run the Windows website installer with `-NoOnboard`, or install a host-served/current-checkout npm spec directly; native installer now bootstraps user-local portable Git under `%LOCALAPPDATA%\OpenClaw\deps\portable-git`
 - `scripts/prl-windows-openclaw.sh <vm> [--env KEY=VALUE ...] <openclaw-args...>`: run guest OpenClaw on native Windows through a PowerShell wrapper that avoids `npm.ps1` / shell quoting nonsense
-- `scripts/prl-windows-gateway-status-version.sh <vm> [--json]`: fetch native Windows `gateway status --json` and normalize success vs known runtime failure text
-- `scripts/prl-windows-openclaw-update-verify.sh <vm>`: end-to-end native Windows release smoke; can start from a published version or a host-served/local npm spec, attempts `update --json`, captures version/status output, reports known release blockers, and can point `update` at a host-served tarball via `--update-spec`
+- `scripts/prl-windows-gateway-status-version.sh <vm> [--json]`: fetch native Windows `gateway status --json`; strips CLIXML and trailing guidance text before parsing
+- `scripts/prl-windows-openclaw-update-verify.sh <vm>`: end-to-end native Windows release smoke; can start from a published version or a host-served/local npm spec, attempts `update --json`, tolerates trailing post-JSON guidance text, reports known release blockers, and can point `update` at a host-served tarball via `--update-spec`
 
 ## Purpose-Built Wrappers
 
@@ -89,7 +89,7 @@ When the task is about OpenClaw install/update verification, prefer the OS-match
 - `prl-linux-openclaw-update-verify.sh`: verifies Linux releases with a detached manual `gateway run` path instead of assuming launchd/systemd service setup
 - `prl-windows-install-openclaw.sh`: runs the public PowerShell installer with `-NoOnboard`, or installs a local/hosted npm spec directly, relying on the installer's user-local MinGit bootstrap instead of admin `winget` Git
 - `prl-windows-openclaw.sh`: runs native Windows `openclaw` via encoded PowerShell, which avoids PATH and execution-policy footguns
-- `prl-windows-gateway-status-version.sh`: returns either parsed status JSON or the raw known failure text for published Windows builds
+- `prl-windows-gateway-status-version.sh`: returns parsed status JSON even when `gateway status --json` appends human guidance after the JSON block
 - `prl-windows-openclaw-update-verify.sh`: captures native Windows version/install/update behavior even when the published release is partially broken; use `--from-spec` and `--update-spec` to keep the whole smoke on host-served artifacts before npm publish
 - `prl-macos-auth-seed.sh`: avoids fragile inline JSON writes when a live test needs stored auth profiles
 
@@ -137,6 +137,8 @@ scripts/prl-windows-gateway-status-version.sh "$VM" --json
 scripts/prl-windows-openclaw-update-verify.sh "$VM" --from-version 2026.3.7 --to-tag latest
 scripts/prl-windows-openclaw-update-verify.sh "$VM" --from-spec "http://10.211.55.2:8138/openclaw-a.tgz" --update-spec "http://10.211.55.2:8138/openclaw-b.tgz"
 scripts/prl-windows-openclaw-update-verify.sh "$VM" --from-version 2026.3.7 --update-spec "http://10.211.55.2:8138/openclaw-next.tgz"
+source ~/.profile >/dev/null 2>&1
+scripts/prl-windows-openclaw.sh "$VM" --env "OPENAI_API_KEY=$OPENAI_API_KEY" agent --local --agent main --json --thinking low -m "Reply with exactly WINDOWS-HATCH-OK."
 ```
 
 Useful IP extractor:
@@ -215,14 +217,22 @@ OpenClaw/Linux notes:
 OpenClaw/Windows notes:
 
 - Prefer the `prl-windows-*` wrappers; raw `prlctl exec ... powershell -Command` is fragile because quoting and PowerShell execution policy love breaking `npm.ps1` / `pnpm.ps1`
+- After a hard reboot or snapshot switch, wait until `prlctl exec "$VM" --current-user whoami` works again before trusting wrapper failures; Parallels Tools/user session readiness lags boot
 - The public Windows installer now bootstraps user-local portable Git under `%LOCALAPPDATA%\OpenClaw\deps\portable-git`; this avoids UAC/admin prompts for Git
 - The portable Git bootstrap is process-local; a fresh guest shell may still say `git` is missing unless the installer or wrapper added the portable paths for that command
 - For upcoming-build verification, host cache-busted tgz files on the Mac (for example `python3 -m http.server 8138`) and pass them with `prl-windows-install-openclaw.sh --spec ...` or `prl-windows-openclaw-update-verify.sh --from-spec ... --update-spec ...`
+- For a real OpenAI smoke on native Windows, source `~/.profile` on the host and use the embedded path:
+  - `scripts/prl-windows-openclaw.sh "$VM" --env "OPENAI_API_KEY=$OPENAI_API_KEY" agent --local --agent main --json --thinking low -m "Reply with exactly WINDOWS-HATCH-OK."`
+- Embedded `agent --local` still needs a target; use `--agent main` for the default session. `--model` is not a valid flag here.
+- Treat native embedded hatch and native gateway service as separate checks:
+  - embedded hatch can pass with only `OPENAI_API_KEY`
+  - `onboard --non-interactive --accept-risk ...` still fails at the final loopback gateway probe if the Windows gateway service is not installed/running
 - Current published native Windows release (`openclaw@2026.3.11`) can install and report `openclaw --version`, but deeper CLI paths may still fail on Windows ARM with the released `@snazzah/davey` binding load problem
 - When you need full native Windows verification today, prefer:
   - website installer for release smoke
   - local tarball/current-checkout install for deeper gateway/plugin/runtime checks
 - `prl-windows-openclaw-update-verify.sh` reports these published-release blockers instead of pretending the path is green
+- `prl-windows-openclaw-update-verify.sh` and `prl-windows-gateway-status-version.sh` support `--help`; use that instead of bare execution when checking flags
 
 ## GUI Automation
 

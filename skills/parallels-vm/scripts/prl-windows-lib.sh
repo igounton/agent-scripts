@@ -54,6 +54,59 @@ process.stdout.write(text);
 '
 }
 
+prl_windows_extract_json() {
+  /opt/homebrew/bin/node -e '
+const fs = require("fs");
+const input = fs.readFileSync(0, "utf8");
+
+function extractJson(text) {
+  for (let start = 0; start < text.length; start += 1) {
+    if (text[start] !== "{") continue;
+    let depth = 0;
+    let inString = false;
+    let escape = false;
+    for (let i = start; i < text.length; i += 1) {
+      const ch = text[i];
+      if (inString) {
+        if (escape) {
+          escape = false;
+        } else if (ch === "\\\\") {
+          escape = true;
+        } else if (ch === "\"") {
+          inString = false;
+        }
+        continue;
+      }
+      if (ch === "\"") {
+        inString = true;
+        continue;
+      }
+      if (ch === "{") {
+        depth += 1;
+        continue;
+      }
+      if (ch === "}") {
+        depth -= 1;
+        if (depth === 0) {
+          const candidate = text.slice(start, i + 1);
+          try {
+            JSON.parse(candidate);
+            process.stdout.write(candidate);
+            return true;
+          } catch {}
+        }
+      }
+    }
+  }
+  return false;
+}
+
+if (!extractJson(input)) {
+  process.exit(1);
+}
+'
+}
+
 prl_windows_exec_ps_script() {
   local vm=$1
   local script=$2

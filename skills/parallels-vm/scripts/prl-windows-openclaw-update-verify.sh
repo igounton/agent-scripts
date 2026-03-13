@@ -12,6 +12,12 @@ usage() {
 
 [[ $# -ge 1 ]] || usage
 
+case "${1:-}" in
+  -h|--help)
+    usage
+    ;;
+esac
+
 vm=$1
 shift
 
@@ -70,14 +76,21 @@ capture_update() {
   fi
   status=$?
   set -e
-  printf '%s\n' "$raw" | /opt/homebrew/bin/node -e '
+  json_raw=
+  if json_raw=$(printf '%s\n' "$raw" | prl_windows_extract_json 2>/dev/null); then
+    :
+  else
+    json_raw=
+  fi
+  raw_b64=$(printf '%s' "$raw" | /usr/bin/base64)
+  printf '%s\n' "$json_raw" | /opt/homebrew/bin/node -e '
 const fs = require("fs");
-const input = fs.readFileSync(0, "utf8");
+const input = fs.readFileSync(0, "utf8").trim();
 const exitCode = Number(process.argv[1]);
-const lines = input.split(/\r?\n/);
-const start = lines.findIndex((line) => line.trim().startsWith("{"));
-if (start >= 0) {
-  const parsed = JSON.parse(lines.slice(start).join("\n"));
+const raw = Buffer.from(process.argv[2], "base64").toString("utf8");
+if (input) {
+  const parsed = JSON.parse(input);
+  const jsonOffset = raw.indexOf(input);
   process.stdout.write(JSON.stringify({
     exitCode,
     ok: exitCode === 0,
@@ -85,6 +98,7 @@ if (start >= 0) {
     afterVersion: parsed.after?.version ?? null,
     raw: parsed,
     error: null,
+    tail: (jsonOffset >= 0 ? raw.slice(jsonOffset + input.length) : "").trim() || null,
   }));
   process.exit(0);
 }
@@ -94,9 +108,10 @@ process.stdout.write(JSON.stringify({
   beforeVersion: null,
   afterVersion: null,
   raw: null,
-  error: input.trim() || `command exited with ${exitCode}`,
+  error: raw.trim() || `command exited with ${exitCode}`,
+  tail: null,
 }));
-' "$status"
+' "$status" "$raw_b64"
 }
 
 if [[ -n "$from_spec" ]]; then
@@ -166,6 +181,7 @@ process.stdout.write(JSON.stringify({
     afterVersion: update.afterVersion ?? null,
     spec: updateSpec || null,
     error: update.error ?? null,
+    tail: update.tail ?? null,
   },
   after: {
     cliVersion: afterCliVersion || null,
