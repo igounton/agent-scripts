@@ -58,6 +58,7 @@ Reusable helpers:
 - `scripts/prl-windows-openclaw.sh <vm> [--env KEY=VALUE ...] <openclaw-args...>`: run guest OpenClaw on native Windows through a PowerShell wrapper that avoids `npm.ps1` / shell quoting nonsense
 - `scripts/prl-windows-gateway-status-version.sh <vm> [--json]`: fetch native Windows `gateway status --json`; strips CLIXML and trailing guidance text before parsing
 - `scripts/prl-windows-openclaw-update-verify.sh <vm>`: end-to-end native Windows release smoke; can start from a published version or a host-served/local npm spec, attempts `update --json`, tolerates trailing post-JSON guidance text, reports known release blockers, and can point `update` at a host-served tarball via `--update-spec`
+- `scripts/prl-windows-onboard-verify.sh <vm>`: native Windows onboarding smoke; separates "embedded/provider setup works" from "managed gateway install works", captures expected no-daemon health failures, and surfaces Scheduled Task access-denied errors cleanly
 
 ## Purpose-Built Wrappers
 
@@ -91,6 +92,7 @@ When the task is about OpenClaw install/update verification, prefer the OS-match
 - `prl-windows-openclaw.sh`: runs native Windows `openclaw` via encoded PowerShell, which avoids PATH and execution-policy footguns
 - `prl-windows-gateway-status-version.sh`: returns parsed status JSON even when `gateway status --json` appends human guidance after the JSON block
 - `prl-windows-openclaw-update-verify.sh`: captures native Windows version/install/update behavior even when the published release is partially broken; use `--from-spec` and `--update-spec` to keep the whole smoke on host-served artifacts before npm publish
+- `prl-windows-onboard-verify.sh`: use this when the question is specifically "does native Windows onboarding succeed?" because it distinguishes expected local-health failures from real daemon install failures
 - `prl-macos-auth-seed.sh`: avoids fragile inline JSON writes when a live test needs stored auth profiles
 
 ## Core Commands
@@ -134,6 +136,9 @@ scripts/prl-windows-install-openclaw.sh "$VM" --version latest
 scripts/prl-windows-install-openclaw.sh "$VM" --spec "http://10.211.55.2:8138/openclaw-next.tgz"
 scripts/prl-windows-openclaw.sh "$VM" --version
 scripts/prl-windows-gateway-status-version.sh "$VM" --json
+scripts/prl-windows-onboard-verify.sh "$VM" --json
+source ~/.profile >/dev/null 2>&1
+scripts/prl-windows-onboard-verify.sh "$VM" --openai-api-key-env OPENAI_API_KEY --json
 scripts/prl-windows-openclaw-update-verify.sh "$VM" --from-version 2026.3.7 --to-tag latest
 scripts/prl-windows-openclaw-update-verify.sh "$VM" --from-spec "http://10.211.55.2:8138/openclaw-a.tgz" --update-spec "http://10.211.55.2:8138/openclaw-b.tgz"
 scripts/prl-windows-openclaw-update-verify.sh "$VM" --from-version 2026.3.7 --update-spec "http://10.211.55.2:8138/openclaw-next.tgz"
@@ -218,6 +223,9 @@ OpenClaw/Windows notes:
 
 - Prefer the `prl-windows-*` wrappers; raw `prlctl exec ... powershell -Command` is fragile because quoting and PowerShell execution policy love breaking `npm.ps1` / `pnpm.ps1`
 - After a hard reboot or snapshot switch, wait until `prlctl exec "$VM" --current-user whoami` works again before trusting wrapper failures; Parallels Tools/user session readiness lags boot
+- `prl-windows-onboard-verify.sh` is the right probe for native onboarding. Without `--install-daemon`, a final gateway health failure is expected unless a local gateway is already running.
+- Native Windows managed gateway install currently goes through Scheduled Tasks. `schtasks create failed: ERROR: Access is denied.` means admin PowerShell is the blocker, not provider auth.
+- Keep embedded hatch/provider checks separate from gateway-service checks. `prl-windows-openclaw.sh "$VM" --env "OPENAI_API_KEY=..." agent --local --agent main ...` can be green while `gateway install` is still red.
 - The public Windows installer now bootstraps user-local portable Git under `%LOCALAPPDATA%\OpenClaw\deps\portable-git`; this avoids UAC/admin prompts for Git
 - The portable Git bootstrap is process-local; a fresh guest shell may still say `git` is missing unless the installer or wrapper added the portable paths for that command
 - For upcoming-build verification, host cache-busted tgz files on the Mac (for example `python3 -m http.server 8138`) and pass them with `prl-windows-install-openclaw.sh --spec ...` or `prl-windows-openclaw-update-verify.sh --from-spec ... --update-spec ...`
