@@ -36,7 +36,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$guest_path" ]]; then
-  guest_path="/Users/steipete/.openclaw/agents/$agent_id/agent/auth-profiles.json"
+  guest_home=$(prl_guest_home "$vm")
+  [[ -n "$guest_home" ]] || prl_die "could not resolve guest HOME"
+  guest_path="$guest_home/.openclaw/agents/$agent_id/agent/auth-profiles.json"
 fi
 
 tmp_input=

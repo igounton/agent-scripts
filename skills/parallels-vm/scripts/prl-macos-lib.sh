@@ -48,6 +48,35 @@ prl_exec_sh() {
   prlctl exec "$vm" --current-user /usr/bin/env PATH="$PRL_GUEST_PATH" /bin/sh -lc "$*"
 }
 
+prl_guest_home() {
+  local vm=$1
+  prlctl exec "$vm" --current-user /usr/bin/env PATH="$PRL_GUEST_PATH" /usr/bin/printenv HOME
+}
+
+prl_ensure_pnpm() {
+  local vm=$1
+  local pnpm_spec=${PRL_GUEST_PNPM_SPEC:-pnpm@10.23.0}
+  if prlctl exec "$vm" --current-user /bin/test -f "$PRL_GUEST_PNPM_CLI" >/dev/null 2>&1; then
+    return 0
+  fi
+  prl_exec_node "$vm" "$PRL_GUEST_NPM_CLI" install -g "$pnpm_spec"
+  prlctl exec "$vm" --current-user /bin/test -f "$PRL_GUEST_PNPM_CLI" >/dev/null 2>&1 ||
+    prl_die "guest pnpm missing after install: $PRL_GUEST_PNPM_CLI"
+}
+
+prl_run_pnpm() {
+  local vm=$1
+  local repo_dir=$2
+  shift 2
+  prl_ensure_pnpm "$vm"
+  prlctl exec "$vm" --current-user \
+    /usr/bin/env PATH="$PRL_GUEST_PATH" \
+    "$PRL_GUEST_NODE" \
+    "$PRL_GUEST_PNPM_CLI" \
+    --dir "$repo_dir" \
+    "$@"
+}
+
 prl_resolve_openclaw_entry() {
   local vm=$1
   local candidate
@@ -85,6 +114,31 @@ prl_run_openclaw_env() {
   local entry
   entry=$(prl_resolve_openclaw_entry "$vm") || prl_die "guest OpenClaw entrypoint not found"
   prl_exec_env_node "$vm" "${env_args[@]}" "$entry" "$@"
+}
+
+prl_resolve_repo_openclaw_entry() {
+  local vm=$1
+  local repo_or_entry=$2
+  local candidate
+  if [[ "$repo_or_entry" == *.mjs || "$repo_or_entry" == *.js || "$repo_or_entry" == *.cjs ]]; then
+    candidate=$repo_or_entry
+    if prlctl exec "$vm" --current-user /bin/test -f "$candidate" >/dev/null 2>&1; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+    return 1
+  fi
+  for candidate in \
+    "$repo_or_entry/openclaw.mjs" \
+    "$repo_or_entry/dist/entry.js" \
+    "$repo_or_entry/dist/index.js"
+  do
+    if prlctl exec "$vm" --current-user /bin/test -f "$candidate" >/dev/null 2>&1; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
 }
 
 prl_download_to_guest() {
