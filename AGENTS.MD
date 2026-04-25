@@ -21,7 +21,6 @@ Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
 - Prefer end-to-end verify; if blocked, say what’s missing.
 - New deps: quick health check (recent releases/commits, adoption).
 - Slash cmds: `~/.codex/prompts/`.
-- Style: telegraph. Drop filler/grammar. Min tokens (global AGENTS + replies).
 
 ## Screenshots (“use a screenshot”)
 - Pick newest PNG in `~/Desktop` or `~/Downloads`.
@@ -37,52 +36,49 @@ Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
 - Obsidian vault: `$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/steipete-notes`
 - Sparkle keys: `~/Library/CloudStorage/Dropbox/Backup/Sparkle`
 
+## Data Sources
+- Prefer local archives before web/API for message/history questions; state freshness + gaps.
+- `discrawl`: Discord archive/search. DB `~/.discrawl/discrawl.db`; config `~/.discrawl/config.toml`; freshness `sync_state`; check `discrawl doctor`; sync `discrawl sync` / `discrawl sync --full`.
+- `slacrawl`: Slack local/API mirror. `slacawl` shim exists; DB `~/.slacrawl/slacrawl.db`; desktop works without tokens; API/full threads/DMs need Slack token env; check `slacrawl doctor`; sync `slacrawl sync --source desktop`.
+- `wacrawl`: WhatsApp Desktop archive. DB `~/.wacrawl/wacrawl.db`; source `~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared`; read-only; check `wacrawl doctor`; import `wacrawl import`.
+- `notcrawl`: Notion SQLite/Markdown mirror. DB `~/.notcrawl/notcrawl.db`; pages `~/.notcrawl/pages`; desktop read-only; API needs `NOTION_TOKEN`; check `notcrawl doctor`; sync `notcrawl sync --source desktop`.
+- `beeper`: Beeper/iMessage local history. SQLite `~/Library/Application Support/BeeperTexts/index.db`; inspect `accounts` first; FTS `mx_room_messages_fts`.
+- `birdclaw`: X/Twitter archive/inbox. `birdcrawl` shim exists; DB `~/.birdclaw/birdclaw.sqlite`; repo `~/Projects/birdclaw`; `xurl` live reads/writes; check `birdclaw auth status --json`; stats `birdclaw db stats --json`.
+- `gog`: Google services CLI. Gmail/Calendar/Drive/Docs/Sheets/Chat when connector insufficient; auth `gog auth list/status`; OAuth creds/keyring under `~/Library/Application Support/gogcli`.
+- Env/API keys: check `~/.profile`; secrets/tokens via `op` only inside tmux.
+
 ## Docs
 - Start: run docs list (`docs:list` script, or `bin/docs-list` here if present; ignore if not installed); open docs before coding.
 - Follow links until domain makes sense; honor `Read when` hints.
 - Keep notes short; update docs when behavior/API changes (no ship w/o docs).
 - Add `read_when` hints on cross-cutting docs.
-- Model note (2025-11-23): no `gpt-5.1-pro` / `grok-4.1` on Peter’s keys yet.
-- Model preference: latest only. OK: Anthropic Opus 4.5 / Sonnet 4.5 (Sonnet 3.5 = old; avoid), OpenAI GPT-5.2, xAI Grok-4.1 Fast, Google Gemini 3 Flash.
 
 ## PR Feedback
-- Active PR: `gh pr view --json number,title,url --jq '"PR #\\(.number): \\(.title)\\n\\(.url)"'`.
-- PR comments: `gh pr view …` + `gh api …/comments --paginate`.
 - Replies: cite fix + file/line; resolve threads only after fix lands.
 - When merging a PR: thank the contributor in `CHANGELOG.md`.
 
 ## Flow & Runtime
 - Use repo’s package manager/runtime; no swaps w/o approval.
 - Use Codex background for long jobs; tmux only for interactive/persistent (debugger/server).
+- Passwords/secrets: check `~/.profile`; `op`/1Password CLI must always run inside `tmux`, never directly.
+- `op` recipe: run the whole secret-using command in `tmux`; avoid temp files unless needed, delete after.
 
 ## Build / Test
 - Before handoff: run full gate (lint/typecheck/tests/docs).
 - CI red: `gh run list/view`, rerun, fix, push, repeat til green.
-- Keep it observable (logs, panes, tails, MCP/browser tools).
 - Release: read `docs/RELEASING.md` (or find best checklist if missing).
-- Reminder: check `~/.profile` for missing env keys (e.g. `SPARKLE_PRIVATE_KEY_FILE`); Sparkle keys live in `~/Library/CloudStorage/Dropbox/Backup/Sparkle`.
 
 ## Git
 - Safe by default: `git status/diff/log`. Push only when user asks.
-- `git checkout` ok for PR review / explicit request.
 - Branch changes require user consent.
 - Destructive ops forbidden unless explicit (`reset --hard`, `clean`, `restore`, `rm`, …).
 - Remotes under `~/Projects`: prefer HTTPS; flip SSH->HTTPS before pull/push.
 - Commit helper on PATH: `committer` (bash). Prefer it; if repo has `./scripts/committer`, use that.
 - Don’t delete/rename unexpected stuff; stop + ask.
 - No repo-wide S/R scripts; keep edits small/reviewable.
-- Avoid manual `git stash`; if Git auto-stashes during pull/rebase, that’s fine (hint, not hard guardrail).
 - If user types a command (“pull and push”), that’s consent for that command.
 - No amend unless asked.
-- Big review: `git --no-pager diff --color=never`.
-- Multi-agent: check `git status/diff` before edits; ship small commits.
-
-## Critical Thinking
-- Fix root cause (not band-aid).
-- Unsure: read more code; if still stuck, ask w/ short options.
-- Conflicts: call out; pick safer path.
 - Unrecognized changes: assume other agent; keep going; focus your changes. If it causes issues, stop + ask user.
-- Leave breadcrumb notes in thread.
 
 ## Tools
 
@@ -95,23 +91,11 @@ Read `~/Projects/agent-scripts/tools.md` for the full tool catalog if it exists.
 ### committer
 - Commit helper (PATH). Stages only listed paths; required here. Repo may also ship `./scripts/committer`.
 
-### bin/docs-list / scripts/docs-list.ts
-- Optional. Lists `docs/` + enforces front-matter. Ignore if `bin/docs-list` not installed. Rebuild: `bun build scripts/docs-list.ts --compile --outfile bin/docs-list`.
-
-### bin/browser-tools / scripts/browser-tools.ts
-- Chrome DevTools helper. Cmds: `start`, `nav`, `eval`, `screenshot`, `pick`, `cookies`, `inspect`, `kill`.
-- Rebuild: `bun build scripts/browser-tools.ts --compile --target bun --outfile bin/browser-tools`.
-
 ### mcporter / iterm / firecrawl / XcodeBuildMCP
 - MCP launcher: `npx mcporter <server>` (see `npx mcporter --help`). Common: `iterm`, `firecrawl`, `XcodeBuildMCP`.
 
 ### gh
 - GitHub CLI for PRs/CI/releases. Given issue/PR URL (or `/pull/5`): use `gh`, not web search.
-- Examples: `gh issue view <url> --comments -R owner/repo`, `gh pr view <url> --comments --files -R owner/repo`.
-
-### Slash Commands
-- Global: `~/.codex/prompts/`. Repo-local: `docs/slash-commands/`.
-- Common: `/handoff`, `/pickup`.
 
 ### tmux
 - Use only when you need persistence/interaction (debugger/server).
