@@ -28,6 +28,8 @@ gh pr diff 123 -R owner/repo --patch
 
 Use exact refs and narrow fields. Avoid broad loops like one `gh issue view` per result when a single `gh search` or `gh issue list --json ...` can answer the first-pass question.
 
+For CI, avoid tight `gh run list` / `gh run view` polling loops. After a push or workflow dispatch, identify one exact run, then poll it with backoff. Fetch full logs only for failed jobs or when the user explicitly asks for logs. Completed-style `gh run view --log`, `--log-failed`, and common Actions REST log endpoints are cached longer by gitcrawl, while run status stays short-lived.
+
 ## Freshness
 
 Local answers are good for discovery, duplicate search, old thread review, author/label triage, and "is there likely already an issue/PR?" checks.
@@ -53,6 +55,8 @@ gh xcache stats
 gh xcache keys
 gh xcache gc
 ```
+
+Read `backend_misses_by_command` and `backend_misses_by_route` in `gh xcache stats --json` before adding new live GitHub loops. Those maps show which command shapes are still escaping the cache.
 
 Use `gh xcache flush` only when a stale cached fallback read is misleading a decision.
 
