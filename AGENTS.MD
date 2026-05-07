@@ -41,7 +41,8 @@ Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
 - Prefer local archives before web/API for message/history questions; check freshness first; sync when asked; state freshness + gaps.
 - `discrawl`: Discord archive/search; use `$discrawl`.
 - `slacrawl`: Slack local/API mirror; use `$slacrawl`.
-- `wacrawl`: WhatsApp Desktop archive; read-only; use `$wacrawl`.
+- `whatsapp`: WhatsApp router; use `$whatsapp` first. Primary reads via read-only `wacrawl`; alt accounts/sending via `wacli`.
+- `wacrawl`: WhatsApp Desktop archive; read-only; use `$wacrawl` for explicit wacrawl work.
 - `notcrawl`: Notion SQLite/Markdown mirror; use `$notcrawl`.
 - `imsg`: iMessage/SMS archive + send; send only on request; use `$imsg`.
 - `beeper`: Beeper local cache/FTS; use `$beeper`.
