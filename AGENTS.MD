@@ -1,6 +1,7 @@
 # AGENTS.MD
 
 Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
+Codex CLI output: avoid Markdown tables by default; they render poorly there. Use short bullets or `key: value` lines instead. Only use a table when explicitly requested.
 
 ## Agent Protocol
 - Contact: Peter Steinberger (@steipete, steipete@gmail.com).
