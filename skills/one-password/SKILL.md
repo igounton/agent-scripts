@@ -19,16 +19,17 @@ Follow the official CLI get-started steps. Don't guess install commands.
 1. Check OS + shell.
 2. Verify CLI present inside tmux: `op --version`.
 3. Confirm desktop app integration is enabled (per get-started) and the app is unlocked.
-4. REQUIRED: create a fresh tmux session for all `op` commands (no direct `op` calls outside tmux).
-5. Sign in / authorize inside tmux: `op signin` (expect app prompt).
-6. Verify access inside tmux: `op whoami` (must succeed before any secret read).
+4. REQUIRED: create exactly one persistent named tmux session for the whole secret task.
+5. Sign in / authorize once inside that same session: `op signin` (expect one app prompt).
+6. Verify access inside that same session: `op whoami` (must succeed before any secret read).
 7. If multiple accounts: use `--account` or `OP_ACCOUNT`.
+8. If a command fails, reuse the same tmux session with `tmux send-keys`; do not start a second session just to retry.
 
-## Peter account defaults
+## Default Account
 
-- Peter's default account for personal/work secrets is `my.1password.com` ("Peter Steinberger's Clan").
-- Do not silently use `my.1password.eu` / Titan unless Peter asks for it.
-- Pass `--account my.1password.com` on every `op` command when storing or reading Peter's secrets. Do not rely on ambient account selection.
+- Default account for personal/work secrets is `my.1password.com`.
+- Do not silently use `my.1password.eu` / Titan unless explicitly asked.
+- Pass `--account my.1password.com` on every `op` command when storing or reading secrets. Do not rely on ambient account selection.
 - `op account list` is metadata-only, but still must run inside tmux. Use it to confirm account names when routing is unclear.
 - `op signin --account my.1password.com` can return status 0 with no useful output and still not make a later shell signed in. Prefer doing sign-in, create/edit/get, and verification in the same tmux shell.
 
@@ -43,29 +44,37 @@ Follow the official CLI get-started steps. Don't guess install commands.
 - Do not enumerate vaults/items with service accounts. If the known item or field is not accessible, stop and ask the user instead of probing.
 - Print presence/shape only, never token or secret values.
 
-## REQUIRED tmux session (T-Max)
+## Required Persistent Tmux Session
 
-The shell tool uses a fresh TTY per command. To avoid re-prompts and failures, always run `op` inside a dedicated tmux session with a fresh socket/session name.
+The shell tool uses a fresh TTY per command. To avoid repeated 1Password prompts, run `op` inside one dedicated tmux session and keep using that same session until the whole secret task is done.
 
-Example (see `tmux` skill for socket conventions, do not reuse old session names):
+Example:
 
 ```bash
 SOCKET_DIR="${CLAWDBOT_TMUX_SOCKET_DIR:-${TMPDIR:-/tmp}/clawdbot-tmux-sockets}"
 mkdir -p "$SOCKET_DIR"
 SOCKET="$SOCKET_DIR/clawdbot-op.sock"
-SESSION="op-auth-$(date +%Y%m%d-%H%M%S)"
+SESSION="op-work"
 
-tmux -S "$SOCKET" new -d -s "$SESSION" -n shell
+tmux -S "$SOCKET" has-session -t "$SESSION" 2>/dev/null ||
+  tmux -S "$SOCKET" new -d -s "$SESSION" -n shell
 tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 -- "op signin --account my.1password.com" Enter
 tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 -- "op whoami" Enter
-tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 -- "op vault list" Enter
 tmux -S "$SOCKET" capture-pane -p -J -t "$SESSION":0.0 -S -200
-tmux -S "$SOCKET" kill-session -t "$SESSION"
 ```
+
+Do not create a new tmux session after a quoting, item-name, or npm command failure. Send a corrected command into the existing session.
+
+## Known npm Auth Item
+
+- npm auth item: `npmjs`.
+- Use exactly one persistent tmux session for npm publish/reservation work.
+- Read `npmjs` once, keep the secret in an in-memory shell variable, write a temporary npmrc, run all `npm whoami` / `npm publish` commands, delete npmrc, unset the variable.
+- If the token field is ambiguous or `npm whoami` fails, stop and ask for the exact field label. Do not probe more items or start another tmux session.
 
 ## Known working secret-write pattern
 
-Use a fresh tmux session, read the secret from the clipboard without printing it, optionally validate an expected token prefix, and write to Peter's account explicitly. The `op` category string is human-readable and case-sensitive in this CLI build; use `"API Credential"`, not `api_credential`.
+Use the persistent tmux session, read the secret from the clipboard without printing it, optionally validate an expected token prefix, and write to the default account explicitly. The `op` category string is human-readable and case-sensitive in this CLI build; use `"API Credential"`, not `api_credential`.
 
 ```bash
 tmux new-session -d -s op-store-secret 'bash -lc '\''set -euo pipefail
