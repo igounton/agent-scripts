@@ -7,10 +7,10 @@
 # ]
 # ///
 """
-Generate images using Google's Nano Banana Pro (Gemini 3 Pro Image) API.
+Generate images using Google's Nano Banana 2 (Gemini 3.1 Flash Image) API.
 
 Usage:
-    uv run generate_image.py --prompt "your image description" --filename "output.png" [--resolution 1K|2K|4K] [--api-key KEY]
+    uv run generate_image.py --prompt "your image description" --filename "output.png" [--resolution 512|1K|2K|4K] [--api-key KEY]
 """
 
 import argparse
@@ -26,9 +26,22 @@ def get_api_key(provided_key: str | None) -> str | None:
     return os.environ.get("GEMINI_API_KEY")
 
 
+def normalize_resolution(value: str) -> str:
+    normalized = value.strip().upper()
+    aliases = {
+        "0.5K": "512",
+        "512PX": "512",
+        "512P": "512",
+    }
+    normalized = aliases.get(normalized, normalized)
+    if normalized not in {"512", "1K", "2K", "4K"}:
+        raise argparse.ArgumentTypeError("choose from 512, 1K, 2K, or 4K")
+    return normalized
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate images using Nano Banana Pro (Gemini 3 Pro Image)"
+        description="Generate images using Nano Banana 2 (Gemini 3.1 Flash Image)"
     )
     parser.add_argument(
         "--prompt", "-p",
@@ -46,9 +59,10 @@ def main():
     )
     parser.add_argument(
         "--resolution", "-r",
-        choices=["1K", "2K", "4K"],
+        type=normalize_resolution,
         default="1K",
-        help="Output resolution: 1K (default), 2K, or 4K"
+        metavar="{512,1K,2K,4K}",
+        help="Output resolution: 512, 1K (default), 2K, or 4K"
     )
     parser.add_argument(
         "--api-key", "-k",
@@ -112,7 +126,7 @@ def main():
 
     try:
         response = client.models.generate_content(
-            model="gemini-3-pro-image-preview",
+            model="gemini-3.1-flash-image-preview",
             contents=contents,
             config=types.GenerateContentConfig(
                 response_modalities=["TEXT", "IMAGE"],

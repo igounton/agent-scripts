@@ -1,11 +1,11 @@
 ---
 name: nano-banana-pro
-description: "Nano Banana Pro/Gemini 3 image gen/edit: text-to-image, image-to-image, 1K/2K/4K, input-image workflows."
+description: "Nano Banana 2/Gemini 3.1 Flash Image gen/edit: text-to-image, image-to-image, 512/1K/2K/4K, input-image workflows."
 ---
 
-# Nano Banana Pro Image Generation & Editing
+# Nano Banana 2 Image Generation & Editing
 
-Generate new images or edit existing ones using Google's Nano Banana Pro API (Gemini 3 Pro Image).
+Generate new images or edit existing ones using Google's Nano Banana 2 API (Gemini 3.1 Flash Image).
 
 ## Usage
 
@@ -13,12 +13,12 @@ Run the script using absolute path (do NOT cd to skill directory first):
 
 **Generate new image:**
 ```bash
-uv run ~/.codex/skills/nano-banana-pro/scripts/generate_image.py --prompt "your image description" --filename "output-name.png" [--resolution 1K|2K|4K] [--api-key KEY]
+uv run ~/.codex/skills/nano-banana-pro/scripts/generate_image.py --prompt "your image description" --filename "output-name.png" [--resolution 512|1K|2K|4K] [--api-key KEY]
 ```
 
 **Edit existing image:**
 ```bash
-uv run ~/.codex/skills/nano-banana-pro/scripts/generate_image.py --prompt "editing instructions" --filename "output-name.png" --input-image "path/to/input.png" [--resolution 1K|2K|4K] [--api-key KEY]
+uv run ~/.codex/skills/nano-banana-pro/scripts/generate_image.py --prompt "editing instructions" --filename "output-name.png" --input-image "path/to/input.png" [--resolution 512|1K|2K|4K] [--api-key KEY]
 ```
 
 **Important:** Always run from the user's current working directory so images are saved where the user is working, not in the skill directory.
@@ -36,13 +36,15 @@ Goal: fast iteration without burning time on 4K until the prompt is correct.
 
 ## Resolution Options
 
-The Gemini 3 Pro Image API supports three resolutions (uppercase K required):
+The Gemini 3.1 Flash Image API supports these output size values:
 
+- **512** - compact ~512px-class resolution
 - **1K** (default) - ~1024px resolution
 - **2K** - ~2048px resolution
 - **4K** - ~4096px resolution
 
 Map user requests to API parameters:
+- "512", "512px", "0.5K", "thumbnail", "tiny" → `512`
 - No mention of resolution → `1K`
 - "low resolution", "1080", "1080p", "1K" → `1K`
 - "2K", "2048", "normal", "medium resolution" → `2K`
