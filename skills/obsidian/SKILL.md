@@ -13,15 +13,20 @@ Use this for local Obsidian vault work. An Obsidian vault is a normal folder of 
 - Default vault name: `obsidian`
 - Usual local vault path: `~/obsidian`
 - Official CLI: `obsidian`
+- Current CLI resolves the vault from cwd; run it from `~/obsidian`.
 
 ## First Checks
 
 ```bash
 command -v obsidian
-obsidian version
+cd ~/obsidian
 obsidian vaults
-obsidian help
+obsidian commands filter=search:
 ```
+
+If run outside the vault, `obsidian` may print `Vault not found.` even when
+`~/obsidian` exists and the app config is valid. `obsidian help` and
+`obsidian version` are not reliable checks on the current CLI.
 
 If `obsidian` says CLI is disabled:
 
@@ -34,6 +39,7 @@ If `obsidian` says CLI is disabled:
 Prefer official CLI for Obsidian-aware lookups:
 
 ```bash
+cd ~/obsidian
 obsidian search query="OpenClaw" format=json
 obsidian search:context query="OpenClaw" limit=20 format=json
 obsidian read path="Folder/Note.md"
@@ -66,6 +72,7 @@ Choose the narrowest write path:
 Common commands:
 
 ```bash
+cd ~/obsidian
 obsidian create path="Notes/New.md" content="# New\n\nBody"
 obsidian append path="Notes/New.md" content="More text"
 obsidian move path="Notes/New.md" to="Archive/New.md"
@@ -81,6 +88,7 @@ For multi-line content, prefer editing the `.md` file with `apply_patch` once th
 Use CLI discovery first:
 
 ```bash
+cd ~/obsidian
 obsidian bases
 obsidian base:views path="Projects.base"
 obsidian base:query path="Projects.base" view="Active" format=json

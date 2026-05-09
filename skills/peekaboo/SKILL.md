@@ -32,6 +32,8 @@ PB="${PEEKABOO_BIN:-$HOME/bin/peekaboo}"
 "$PB" list windows --app Safari --json
 "$PB" image --mode screen --screen-index 0 --path /tmp/screen.png --json --no-remote
 "$PB" see --app frontmost --path /tmp/frontmost.png --json --annotate
+"$PB" tools --json
+"$PB" learn
 "$PB" click --coords 100,100 --json
 "$PB" type "text" --json
 ```
@@ -42,6 +44,8 @@ PB="${PEEKABOO_BIN:-$HOME/bin/peekaboo}"
 2. Run `permissions status --json`; if missing TCC, report exact missing grant.
 3. For screenshots, use `image`; include `--path`, `--json`, and usually `--no-remote`.
 4. For element targeting, run `see --json --annotate`, then click by element id/snapshot.
-5. Verify output files with `sips -g pixelWidth -g pixelHeight <path>` or view the image.
+5. For long-running/change-aware screen capture, use `capture live`; for video frame sampling, use `capture video`.
+6. Use `tools --json` for command/tool discovery and `learn` when the full agent guide is useful.
+7. Verify output files with `sips -g pixelWidth -g pixelHeight <path>` or view the image.
 
 Docs: `~/Projects/Peekaboo/docs/commands/`.

@@ -34,6 +34,9 @@ notcrawl sync --source api
 3. Use `export-md` when the user needs Markdown files refreshed.
 4. Report date spans, page/database IDs, counts, and source limits.
 
+Use root `notcrawl --help` for syntax. Do not run `notcrawl search --help` or
+`notcrawl sql --help`; current CLI parses `--help` as query text there.
+
 Common commands:
 
 ```bash
