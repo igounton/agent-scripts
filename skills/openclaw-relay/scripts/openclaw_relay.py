@@ -92,12 +92,19 @@ def remote_home(host: str) -> str:
 def normalize_args(args: argparse.Namespace) -> argparse.Namespace:
     if args.transport == "local":
         cwd = args.cwd or DEFAULT_CWD or os.getcwd()
+        if not args.cwd and not DEFAULT_CWD and not (Path(cwd) / "scripts" / "run-node.mjs").exists():
+            for candidate in (Path.home() / "clawdbot", Path.home() / "Projects" / "clawdbot"):
+                if (candidate / "scripts" / "run-node.mjs").exists():
+                    cwd = str(candidate)
+                    break
         gateway_token_file = args.gateway_token_file or DEFAULT_GATEWAY_TOKEN_FILE
-        if not gateway_token_file:
-            gateway_token_file = str(Path.home() / ".openclaw" / "gateway.token")
         args.cwd = str(Path(cwd).expanduser())
-        args.acpx_repo = str(Path(args.acpx_repo or DEFAULT_ACPX_REPO or Path(args.cwd) / "extensions" / "acpx").expanduser())
-        args.gateway_token_file = str(Path(gateway_token_file).expanduser())
+        acpx_repo = args.acpx_repo or DEFAULT_ACPX_REPO
+        if not acpx_repo:
+            oss_acpx = Path.home() / "Projects" / "oss" / "acpx"
+            acpx_repo = str(oss_acpx if oss_acpx.exists() else Path(args.cwd) / "extensions" / "acpx")
+        args.acpx_repo = str(Path(acpx_repo).expanduser())
+        args.gateway_token_file = str(Path(gateway_token_file).expanduser()) if gateway_token_file else None
         return args
 
     home = remote_home(args.host)
@@ -387,11 +394,14 @@ def resolve_target(args: argparse.Namespace, target: str) -> dict[str, Any]:
 
 def build_openclaw_agent_command(args: argparse.Namespace, session_key: str) -> str:
     runner = shlex.quote(f"{args.cwd}/scripts/run-node.mjs")
+    token_file_arg = (
+        f" --token-file {shlex.quote(args.gateway_token_file)}" if args.gateway_token_file else ""
+    )
     return (
         "env OPENCLAW_HIDE_BANNER=1 OPENCLAW_SUPPRESS_NOTES=1 "
         f"node {runner} acp "
         f"--url {shlex.quote(args.gateway_url)} "
-        f"--token-file {shlex.quote(args.gateway_token_file)} "
+        f"{token_file_arg} "
         f"--session {shlex.quote(session_key)}"
     )
 

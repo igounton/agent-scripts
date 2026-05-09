@@ -1,4 +1,4 @@
 {
-  "main": "agent:<agentId>:main",
-  "maintainers": "agent:<agentId>:discord:channel:<channelId>"
+  "main": "agent:main:main",
+  "maintainers": "agent:main:discord:channel:1456744319972282449"
 }
