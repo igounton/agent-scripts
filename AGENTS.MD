@@ -6,6 +6,7 @@ Codex CLI output: avoid Markdown tables by default; they render poorly there. Us
 - Workspace: `~/Projects`. Missing steipete repo: clone `https://github.com/steipete/<repo>.git`. 3rd-party/OSS: `~/Projects/oss`.
 - "Make a note" here => terse `AGENTS.MD` edit. Ignore `CLAUDE.md`.
 - `ship` => changelog, commit in groups, push, pull.
+- Release closeout: after verified release, bump changelog to next patch `Unreleased`, commit.
 - Skills are canonical for tool workflows. Keep this file to hard rules only.
 - Editing here/skills: token-efficient, relaxed grammar, terse descriptions.
 - Read `~/Projects/agent-scripts/tools.md` when the tool catalog matters.
