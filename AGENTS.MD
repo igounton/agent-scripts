@@ -35,6 +35,7 @@ Codex CLI output: avoid Markdown tables by default; they render poorly there. Us
 - `fix ci`: consent to pull, commit, push; fix/rerun/watch until CI green.
 - CI: `gh run list/view`; rerun/fix until green when asked.
 - Replies: cite fix + file/line; resolve threads only after fix lands.
+- Issue fixed on `main` with proof: comment proof + commit/PR, then close.
 - User-facing fixes/landed PRs: changelog unless pure test/internal.
 - When merging contributor PRs: thank contributor in `CHANGELOG.md`.
 - Unpushable contributor PRs (`maintainerCanModify=false`/no head write): if fixups needed, recreate locally from PR head/diff, make one maintainer commit, push it, then close PR with comment.
