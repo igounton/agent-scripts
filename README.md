@@ -1,59 +1,91 @@
 # Agent Scripts
 
-This folder collects the Sweetistics guardrail helpers so they are easy to reuse in other repos or share during onboarding. Everything here is copied verbatim from `/Users/steipete/Projects/sweetistics` on 2025-11-08 unless otherwise noted.
+Shared agent instructions, skills, and small portable helpers for Peter's local workspaces.
 
-Additional skills (copied 2025-12-31) are from @Dimillian’s public `Dimillian/Skills` repository:
-- `skills/swift-concurrency-expert`
-- `skills/swiftui-liquid-glass`
-- `skills/swiftui-performance-audit`
-- `skills/swiftui-view-refactor`
+This repo is the canonical place for:
+- `AGENTS.MD`: shared hard rules for Codex/Claude-style agents
+- `skills/`: reusable workflow skills, including repo-owned skills exposed by symlink
+- `scripts/`: dependency-light helpers used across projects
+- `hooks/`: local guardrails such as skill validation
 
-## Syncing With Other Repos
-- Treat this repo as the canonical mirror for the shared guardrail helpers. Whenever you edit `scripts/committer` or `scripts/docs-list.ts` in any repo, copy the change here and then back out to every other repo that carries the same helpers so they stay byte-identical.
-- When someone says “sync agent scripts,” pull the latest changes here, ensure downstream repos have the pointer-style `AGENTS.MD`, copy any helper updates into place, and reconcile differences before moving on.
-- Keep every file dependency-free and portable: the scripts must run in isolation across repos. Do not add `tsconfig` path aliases, shared source folders, or any other Sweetistics-specific imports—inline tiny helpers or duplicate the minimum code needed so the mirror stays self-contained.
+## Skills
 
-## Pointer-Style AGENTS
-- Shared guardrail text now lives only inside this repo: `AGENTS.MD` (shared rules + tool list).
-- Every consuming repo’s `AGENTS.MD` is reduced to the pointer line `READ ~/Projects/agent-scripts/AGENTS.MD BEFORE ANYTHING (skip if missing).` Place repo-specific rules **after** that line if they’re truly needed.
-- Do **not** copy the `[shared]` or `<tools>` blocks into other repos anymore. Instead, keep this repo updated and have downstream workspaces re-read `AGENTS.MD` when starting work.
-- When updating the shared instructions, edit `agent-scripts/AGENTS.MD`; global Codex/Claude files consume it through symlinks.
+Skills are the main routing layer. Each `skills/<name>/SKILL.md` has YAML front matter:
 
-## Global Agent Setup
-- Global Codex and Claude instructions should point at this repo:
-  - `~/.codex/AGENTS.md -> ~/Projects/agent-scripts/AGENTS.MD`
-  - `~/.claude/CLAUDE.md -> ~/Projects/agent-scripts/AGENTS.MD`
-  - `~/.claude/AGENTS.md -> ~/Projects/agent-scripts/AGENTS.MD`
-- Global skill discovery should also point at this repo:
-  - `~/.codex/skills -> ~/Projects/agent-scripts/skills`
-  - `~/.claude/skills -> ~/Projects/agent-scripts/skills`
-- Keep shared skills as real folders in `skills/`. For repo-owned skills, keep the canonical skill in the owning repo and expose it here with a tracked relative symlink, for example `skills/birdclaw -> ../../birdclaw/.agents/skills/birdclaw`.
-- Local crawler skills follow that repo-owned pattern: `birdclaw`, `discrawl`, `slacrawl`, `wacrawl`, `imsg`, and `gog`. `beeper`, `notcrawl`, and `discord-clawd` live here until they have repo homes.
+```yaml
+---
+name: skill-name
+description: "Short generic trigger phrase."
+---
+```
 
-## Committer Helper (`scripts/committer`)
-- **What it is:** Bash helper that stages exactly the files you list, enforces non-empty commit messages, and creates the commit.
+Rules:
+- Keep descriptions short and generic; optimize for routing, not documentation.
+- Keep skill bodies terse and operational.
+- Prefer helper scripts under `skills/<name>/scripts/` when a workflow has repeatable commands.
+- Validate after edits: `scripts/validate-skills`.
+- Quote `description` in front matter.
 
-## Skill Validator Hook
-- **What it is:** `scripts/validate-skills` checks every discoverable `skills/*/SKILL.md` file for valid YAML front matter and required `name`/`description` fields.
-- **Hook:** `hooks/pre-commit` runs the validator before commits. Enable the tracked hooks in a checkout with `git config core.hooksPath hooks`.
+Global discovery usually points here:
+- `~/.codex/skills -> ~/Projects/agent-scripts/skills`
+- `~/.claude/skills -> ~/Projects/agent-scripts/skills`
 
-## Docs Lister (`scripts/docs-list.ts`)
-- **What it is:** tsx script that walks `docs/`, enforces front-matter (`summary`, `read_when`), and prints the summaries surfaced by `pnpm run docs:list`. Other repos can wire the same command into their onboarding flow.
-- **Binary build:** `bin/docs-list` is the compiled Bun CLI; regenerate it after editing `scripts/docs-list.ts` via `bun build scripts/docs-list.ts --compile --outfile bin/docs-list`.
+Shared skills live as real folders in `skills/`. Repo-owned skills stay canonical in their repo and are exposed here with tracked relative symlinks, for example:
 
-## Browser Tools (`bin/browser-tools`)
-- **What it is:** A standalone Chrome helper inspired by Mario Zechner’s [“What if you don’t need MCP?”](https://mariozechner.at/posts/2025-11-02-what-if-you-dont-need-mcp/) article. It launches/inspects DevTools-enabled Chrome profiles, pastes prompts, captures screenshots, and kills stray helper processes without needing the full Oracle CLI.
-- **Usage:** Prefer the compiled binary: `bin/browser-tools --help`. Common commands include `start --profile`, `nav <url>`, `eval '<js>'`, `screenshot`, `search --content "<query>"`, `content <url>`, `inspect`, and `kill --all --force`.
-- **Rebuilding:** The binary is not tracked in git. Re-generate it with `bun build scripts/browser-tools.ts --compile --target bun --outfile bin/browser-tools` (requires Bun) and leave transient `node_modules`/`package.json` out of the repo.
-- **Portability:** The tool has zero repo-specific imports. Copy the script or the binary into other automation projects as needed and keep this copy in sync with downstream forks. It detects Chrome sessions launched via `--remote-debugging-port` **and** `--remote-debugging-pipe`, so list/kill works for both styles.
+```text
+skills/discrawl -> ../../discrawl/.agents/skills/discrawl
+```
 
-## Sync Expectations
-- This repository is the canonical mirror for the guardrail helpers used in mcporter and other Sweetistics projects. Whenever you edit `scripts/committer`, `scripts/docs-list.ts`, or related guardrail files in another repo, copy the changes back here immediately (and vice versa) so the code stays byte-identical.
-- When someone asks to “sync agent scripts,” update this repo, compare it against the active project, and reconcile differences in both directions before continuing.
+Current symlinked repo-owned skills include `birdclaw`, `discrawl`, `gog`, `imsg`, `slacrawl`, `wacli`, and `wacrawl`.
 
-## @steipete Agent Instructions (pointer workflow)
-- The only full copies of the guardrails are `agent-scripts/AGENTS.MD` and `~/AGENTS.MD`. Downstream repos should contain the pointer line plus any repo-local additions.
-- During a sync sweep: pull latest `agent-scripts`, ensure each target repo’s `AGENTS.MD` contains the pointer line at the top, append any repo-local notes beneath it, and update the helper scripts as needed.
-- If a repo needs custom instructions, clearly separate them from the pointer so future sweeps don’t overwrite local content.
-- For submodules (Peekaboo/*), repeat the pointer check inside each subrepo, push those changes, then bump submodule SHAs in the parent repo.
-- Skip experimental repos (e.g., `poltergeist-pitui`) unless explicitly requested.
+## Agent Instructions
+
+Shared hard rules live in `AGENTS.MD`.
+
+Global setup:
+- `~/.codex/AGENTS.md -> ~/Projects/agent-scripts/AGENTS.MD`
+- `~/.claude/CLAUDE.md -> ~/Projects/agent-scripts/AGENTS.MD`
+- `~/.claude/AGENTS.md -> ~/Projects/agent-scripts/AGENTS.MD`
+
+Downstream repos should use a pointer-style `AGENTS.MD`:
+
+```text
+READ ~/Projects/agent-scripts/AGENTS.MD BEFORE ANYTHING (skip if missing).
+```
+
+Repo-specific rules go below that pointer. Do not copy the shared blocks into downstream repos.
+
+## Helpers
+
+`scripts/committer`
+- Stages exactly the listed files.
+- Enforces a non-empty commit message.
+- Runs skill validation before committing.
+
+`scripts/validate-skills`
+- Checks every `skills/*/SKILL.md`.
+- Verifies YAML front matter plus required `name` and `description`.
+- Enable as a local hook with `git config core.hooksPath hooks`.
+
+`scripts/docs-list.ts`
+- Walks `docs/`.
+- Enforces `summary` and `read_when` front matter.
+- Prints onboarding summaries for repos that wire it in.
+
+`scripts/browser-tools.ts`
+- Standalone Chrome DevTools helper.
+- Common commands: `start --profile`, `nav <url>`, `eval '<js>'`, `screenshot`, `search --content "<query>"`, `content <url>`, `inspect`, `kill --all --force`.
+- Build optional binary with `bun build scripts/browser-tools.ts --compile --target bun --outfile bin/browser-tools`.
+
+## Syncing
+
+Treat this repo as canonical for shared agent rules and portable helper scripts.
+
+When syncing downstream repos:
+- Pull latest here first.
+- Ensure each target repo starts with the pointer-style `AGENTS.MD`.
+- Preserve repo-local rules below the pointer.
+- Copy helper changes both directions only when the helper is meant to stay byte-identical.
+- Keep scripts dependency-free and portable; no repo-specific imports or path aliases.
+
+For submodules, repeat the pointer check inside each subrepo, push those changes, then bump submodule SHAs in the parent repo.

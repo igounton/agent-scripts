@@ -4,6 +4,9 @@ summary: Timeline of guardrail helper changes mirrored from Sweetistics and rela
 
 # Changelog
 
+## 2026-05-14 — README Skills Overview
+- Rewrote the README around agent instructions, skills, helper scripts, and sync expectations; removed stale copied-origin notes.
+
 ## 2026-05-14 — Codex Review Skill
 - Added a `codex-review` skill and helper for closeout reviews, with stdout-only default output and subagent filtering guidance for noisy review output.
 
