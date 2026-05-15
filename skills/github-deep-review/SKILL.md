@@ -38,6 +38,7 @@ Always answer these, explicitly:
 - URL/ref: issue or PR number and affected surface.
 - What is the bug or behavior being fixed?
 - Can we identify the root cause? If yes, where in code and why. If no, what evidence is missing.
+- For regressions, who/what introduced it and when? Include commit/PR provenance when traceable by bounded history; say unknown instead of guessing.
 - Is the current/proposed fix the best possible fix after reading adjacent code?
 - Would a bigger refactor improve correctness, clarity, or future maintainability?
 - What proof exists: tests, live repro, CI checks, docs, dependency docs/source, shipped/current behavior.
@@ -55,6 +56,16 @@ Read past the first touched file. Follow the real call path:
 When behavior depends on a dependency, read the upstream docs/source/types or current package contract before assuming.
 
 Prefer current source and executable proof over issue comments. Treat stale comments, old CI, and old release behavior as hints until rechecked.
+
+## Provenance
+
+For bug/regression reviews, include a compact `Provenance:` answer when feasible:
+
+- Use `git log -S/-G`, `git blame`, linked PRs/issues, and tests.
+- Separate author, committer/merger, and current PR author when they differ.
+- Phrase as `introduced by`, `made visible by`, or `carried forward by`.
+- Include confidence: `clear`, `likely`, or `unknown`.
+- For features, docs, refactors, or untraceable bugs, write `N/A` or say what evidence is missing.
 
 ## Fix Quality Bar
 
@@ -104,6 +115,7 @@ Surface: <runtime/CLI/provider/channel/docs>
 
 Bug: <one or two sentences>
 Cause: <code path + confidence>
+Provenance: <introduced/made visible/carried forward by commit/PR/date, or N/A/unknown>
 Best fix: <what should change and why>
 Refactor: <yes/no, specific shape>
 Proof: <tests/live/CI/source/dependency docs>
