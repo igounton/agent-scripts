@@ -9,7 +9,8 @@ Options:
   --mode auto|local|branch   Target selection. Default: auto.
   --base REF                 Base ref for branch review. Default: PR base or origin/main.
   --codex-bin PATH           Codex binary. Default: codex.
-  --full-access              Run nested Codex review without sandbox/approval prompts.
+  --full-access              Keep yolo/full-access mode enabled. Default.
+  --no-yolo                  Run nested Codex review with normal sandbox/approval prompts.
   --output FILE              Also save output to file.
   --parallel-tests CMD       Run review and test command concurrently.
   --dry-run                  Print selected commands, do not run.
@@ -26,6 +27,7 @@ mode=auto
 base_ref=
 codex_bin=${CODEX_BIN:-codex}
 codex_args=()
+yolo=${CODEX_REVIEW_YOLO:-1}
 output=${CODEX_REVIEW_OUTPUT:-}
 parallel_tests=
 dry_run=false
@@ -45,7 +47,11 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --full-access)
-      codex_args+=(--dangerously-bypass-approvals-and-sandbox)
+      yolo=1
+      shift
+      ;;
+    --no-yolo)
+      yolo=0
       shift
       ;;
     --output)
@@ -70,6 +76,11 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+case "$yolo" in
+  0|false|False|FALSE|no|No|NO|off|Off|OFF) ;;
+  *) codex_args+=(--dangerously-bypass-approvals-and-sandbox) ;;
+esac
 
 case "$mode" in
   auto|local|branch) ;;
