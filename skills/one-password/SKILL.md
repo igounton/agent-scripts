@@ -38,9 +38,10 @@ Follow the official CLI get-started steps. Don't guess install commands.
 
 - Prefer service-account tokens before any interactive 1Password flow. User dialogs are fallback only.
 - 1Password service accounts are non-interactive tokens for a specific vault/scope, useful for automation without unlocking the desktop app.
-- Use a pre-exported `MOLTY_OP_SERVICE_ACCOUNT_TOKEN` only for known items in the restricted `Molty` vault.
+- Peter's default service-account token is exported from `~/.profile` as `OP_SERVICE_ACCOUNT_TOKEN` in a Codex-managed block. It is scoped to the restricted `Molty` vault.
+- Older shells may expose the same value as `MOLTY_OP_SERVICE_ACCOUNT_TOKEN`; treat that as a fallback alias for known `Molty` vault items.
 - If the token is not already exported, not applicable, or cannot read the exact known item/field required, ask the user before using the desktop-app 1Password flow below.
-- Export it only for the single command that needs it: `OP_SERVICE_ACCOUNT_TOKEN="$MOLTY_OP_SERVICE_ACCOUNT_TOKEN" op item get "<known item>" --vault Molty ...`.
+- Export/pass it only for the single command that needs it: `OP_SERVICE_ACCOUNT_TOKEN="$OP_SERVICE_ACCOUNT_TOKEN" op item get "<known item>" --vault Molty ...`.
 - Service-account `op` reads require an explicit vault query; omitting `--vault Molty` fails even when the token is valid.
 - Keep the tmux rule: every `op` command, including service-account reads, still runs inside one named tmux session.
 - Do not enumerate vaults/items with service accounts. If the known item or field is not accessible, stop and ask the user instead of probing or triggering app dialogs.
