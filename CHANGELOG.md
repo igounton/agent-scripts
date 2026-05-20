@@ -10,6 +10,9 @@ summary: Timeline of guardrail helper changes mirrored from Sweetistics and rela
 ## 2026-05-20 — OpenClaw Deployment Account
 - Added AGENTS routing to require `service@openclaw.org` accounts for OpenClaw deployments.
 
+## 2026-05-20 — Things Todo Skill
+- Added `things-todo` skill for Things 3 todo CRUD through the `things` CLI with auth-token handling, JSON/read-back verification, and no direct DB-write guidance.
+
 ## 2026-05-20 — Reminders Skill
 - Added `reminders` skill for Apple Reminders CRUD through the `rem` CLI with JSON/read-back verification and macOS permission notes.
 
