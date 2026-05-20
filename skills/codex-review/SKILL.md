@@ -1,6 +1,6 @@
 ---
 name: codex-review
-description: "Codex code review closeout: local dirty changes, PR branch vs main, parallel tests."
+description: "Codex autoreview/code review closeout: local dirty changes, PR branch vs main, parallel tests."
 ---
 
 # Codex Review

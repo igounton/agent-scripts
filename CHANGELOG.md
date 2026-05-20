@@ -4,6 +4,9 @@ summary: Timeline of guardrail helper changes mirrored from Sweetistics and rela
 
 # Changelog
 
+## 2026-05-20 — Codex Review Autoreview Trigger
+- Updated `codex-review` skill description to include `autoreview` for routing/search.
+
 ## 2026-05-18 — 1Password Exact Field Reads
 - Updated `one-password` to avoid tmux window-index assumptions and document exact-label JSON extraction when `op --field` resolves an ambiguous concealed field.
 
