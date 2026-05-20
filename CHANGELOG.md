@@ -4,6 +4,9 @@ summary: Timeline of guardrail helper changes mirrored from Sweetistics and rela
 
 # Changelog
 
+## 2026-05-20 — Reminders Skill
+- Added `reminders` skill for Apple Reminders CRUD through the `rem` CLI with JSON/read-back verification and macOS permission notes.
+
 ## 2026-05-20 — GitHub Triage Skill Detail
 - Updated `github-project-triage` to summarize each issue/PR with fit, risk, proof, blockers, next action, and contributor trust signals.
 - Added a bundled `github-activity.sh` helper for repo/global GitHub author activity checks during triage.
