@@ -4,6 +4,9 @@ summary: Timeline of guardrail helper changes mirrored from Sweetistics and rela
 
 # Changelog
 
+## 2026-05-25 — Agent Skills Origin
+- Added AGENTS guidance that `../agent-skills` means `openclaw/agent-skills`, plus local `handoff` skill routing.
+
 ## 2026-05-24 — 1Password Item Lookup
 - Updated `one-password` to allow explicit vault-scoped metadata search for fuzzy/screenshot-driven item lookup before exact field reads.
 

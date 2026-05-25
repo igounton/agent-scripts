@@ -4,6 +4,7 @@ Codex CLI output: avoid Markdown tables by default; they render poorly there. Us
 ## Core
 
 - Workspace: `~/Projects`. Missing steipete repo: clone `https://github.com/steipete/<repo>.git`. 3rd-party/OSS: `~/Projects/oss`.
+- `../agent-skills` = `https://github.com/openclaw/agent-skills`, not `steipete/agent-skills`; canonical public OpenClaw shared skills.
 - "Make a note" here => terse `AGENTS.MD` edit. No separate `CLAUDE.md` here.
 - `ship` => changelog, commit in groups, push, pull.
 - Version bumps only on explicit release request. Release = GitHub Release; npm publish too when package applies.
