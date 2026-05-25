@@ -5,6 +5,7 @@ summary: Timeline of guardrail helper changes mirrored from Sweetistics and rela
 # Changelog
 
 ## 2026-05-25 — Agent Skills Origin
+- Added `wrangler` skill for Cloudflare account routing, current Wrangler flags, KV/tail pitfalls, and serial command hygiene.
 - Updated `skill-cleaner` to realpath-dedupe roots, keep Dropbox archives opt-in, print Codex-rule GPT-5.5 2% budget usage, scope disabled-plugin parsing correctly, and rank duplicate delete suggestions by body similarity with Codex/system copies preferred.
 - Added `skill-cleaner` for auditing loaded Codex/OpenClaw skills, duplicate copies, recent usage, and prompt-budget description candidates.
 - Renamed release workflow skills to the `release-*` convention and moved product-specific release skills into their owning repos.
