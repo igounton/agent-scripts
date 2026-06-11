@@ -1,4 +1,4 @@
 interface:
   display_name: "Maintainer Orchestrator"
   short_description: "Delegate repo work and prepare mergeable queues"
-  default_prompt: "Use $maintainer-orchestrator as a lightweight coordinator for Peter-majority repositories except OpenClaw and ClawHub. Delegate substantial work to repository threads, monitor them every five minutes, turn issues into decision-ready mergeable PRs with live proof and green CI, print full clickable URLs, and release empty queues with patch by default or minor only for substantial additive features."
+  default_prompt: "Use $maintainer-orchestrator as a lightweight coordinator for Peter-majority repositories except OpenClaw and ClawHub. Delegate substantial work to repository threads, rename each assigned worker as Project: short current task, monitor them every five minutes, turn issues into decision-ready mergeable PRs with live proof and green CI, print full clickable URLs, and release empty queues with patch by default or minor only for substantial additive features."

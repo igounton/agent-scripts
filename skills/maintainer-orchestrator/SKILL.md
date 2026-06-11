@@ -21,7 +21,7 @@ Coordinate repository work through completion. This is a control-plane skill: in
    - `Autonomous`: clear fit, reproducible, bounded implementation, and usable verification path.
    - `Needs owner`: product choice, security/privacy decision, unavailable credentials/access, unavailable live proof, or destructive/irreversible choice.
    - `Ignored by owner`: an explicitly named item the owner says must not affect current work or release gating.
-3. When delegation is explicitly authorized, delegate independent repositories to separate Codex threads. Put the repository name first in each thread title. Keep work for one repository in its existing thread. Do not set or request a custom model; omit model selection and inherit the platform default.
+3. When delegation is explicitly authorized, delegate independent repositories to separate Codex threads. Whenever assigning or materially changing work, rename the worker thread to `<Project>: <short current task>`. Keep work for one repository in its existing thread. Do not set or request a custom model; omit model selection and inherit the platform default.
 4. Keep this coordinator thread lightweight. Do not perform extensive repository work here. Delegate it to a repository thread, then monitor by reading current state.
 5. Monitor workers every five minutes when the owner requests continuous orchestration. Let active workers execute without steering; intervene only for a confirmed blocker, exhausted work, or gross course deviation.
 6. Continue until each autonomous item is merged/closed with proof, each decision item has a mergeable PR ready for owner land/delete choice, or an empty effective queue is released.
@@ -62,6 +62,14 @@ Intervene only when evidence shows one of:
 Do not restate the task, add speculative requirements, or raise the proof bar mid-flight. Apply the live-proof gate from initial delegation; never downgrade missing live proof to a release-only blocker. Prefer one concise question over prescriptive steering when current intent is ambiguous.
 
 Never interrupt, archive, rename, duplicate, or replace a worker without first reading its current state. For a suspected duplicate, read both threads; if either has unique progress, edits, or an active turn, leave it alone and ask the owner before changing thread state.
+
+## Thread Naming
+
+- Rename a worker whenever giving it a new task or materially changing its assignment.
+- Format every worker title as `<Project>: <short current task>`.
+- Read the latest state and newest thread-local instructions before renaming.
+- Keep the title specific to current work; replace stale original-task titles.
+- Polling alone does not justify a rename.
 
 ## Idle Thread Closeout
 
