@@ -161,4 +161,6 @@ Keep one compact cross-repo ledger:
 - `Released`: version, tag/registry verification, closeout commit.
 - `Ready next`: effective queue empty, CI green, recommended patch/minor version and rationale.
 
+Whenever mentioning an issue or PR in any owner report, decision question, worker message, or status update, print its full canonical clickable URL. Never use only a repository-local number such as `#123`; include `https://github.com/OWNER/REPO/issues/123` or `https://github.com/OWNER/REPO/pull/123`.
+
 Report meaningful changes, not routine polling. Maintain a heartbeat automation when the user asks to keep monitoring.

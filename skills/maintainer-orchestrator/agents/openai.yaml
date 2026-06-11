@@ -1,4 +1,4 @@
 interface:
   display_name: "Maintainer Orchestrator"
   short_description: "Coordinate repo queues, workers, and releases"
-  default_prompt: "Use $maintainer-orchestrator to observe current worker state, keep every repo lane working or waiting on a concrete owner decision, require live proof before landing, and release empty queues with patch by default or minor only for substantial additive features."
+  default_prompt: "Use $maintainer-orchestrator to observe current worker state, keep every repo lane working or waiting on a concrete owner decision, print the full clickable URL whenever mentioning an issue or PR, require live proof before landing, and release empty queues with patch by default or minor only for substantial additive features."
