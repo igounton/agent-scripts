@@ -17,6 +17,7 @@ Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
 - Skill frontmatter: quote `description`; after SKILL.md edits, YAML-parse frontmatter before commit.
 - Read `~/Projects/agent-scripts/tools.md` when the tool catalog matters.
 - Confidentiality: never expose, quote, infer, or publish non-public organizational information, including internal project/model names, codenames, systems, infrastructure, processes, credentials, URLs, datasets, personnel details, or proprietary context. Treat it as confidential unless the user explicitly confirms it is public and approves release.
+- Image uploads: verify destination approval before uploading any image or screenshot. Personal devices: user-requested destinations allowed, subject to confidentiality rules. Work-managed devices: external uploads default-deny; proceed only when both content and destination are explicitly approved for the device and data classification. Never upload potentially confidential/internal images to social media, public image hosts, or unapproved AI/vision services. Unclear device context, sensitivity, or approval: stop and ask. Local-only processing allowed.
 
 ## Routing
 

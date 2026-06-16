@@ -4,6 +4,9 @@ summary: Timeline of guardrail helper changes mirrored from Sweetistics and rela
 
 # Changelog
 
+## 2026-06-16 — Image Upload Guardrail
+- Added device-aware image upload guidance that defaults work-managed devices to approved content and destinations only.
+
 ## 2026-06-15 — Locked-Mac Git Fallback
 - Added AGENTS guidance to use HTTPS transport and unsigned commits when Secretive signing is unavailable on a locked Mac.
 
