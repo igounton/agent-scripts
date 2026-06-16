@@ -452,7 +452,11 @@ mac_release_public_key_for_source() {
   if [[ "$source" == "keychain" ]]; then
     local account_args=()
     mac_release_sparkle_account_args account_args
-    generate_keys "${account_args[@]}" -p
+    if [[ "${#account_args[@]}" -gt 0 ]]; then
+      generate_keys "${account_args[@]}" -p
+    else
+      generate_keys -p
+    fi
   else
     mac_release_public_key_from_file "$source"
   fi
@@ -1204,7 +1208,9 @@ mac_release_prepare_codesign_keychain() {
     mac_release_die "Could not decode user keychain search list"
   }
   expected_keychain_count=${keychain_records[0]}
-  [[ "$expected_keychain_count" -eq $(("${#keychain_records[@]}" - 1)) ]] || {
+  local actual_keychain_count
+  actual_keychain_count=$((${#keychain_records[@]} - 1))
+  [[ "$expected_keychain_count" -eq "$actual_keychain_count" ]] || {
     mac_release_restore_codesign_keychains
     mac_release_die "Incomplete user keychain search list"
   }
