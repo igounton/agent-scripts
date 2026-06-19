@@ -4,6 +4,9 @@ summary: Timeline of guardrail helper changes mirrored from Sweetistics and rela
 
 # Changelog
 
+## 2026-06-19 — Gmail Login Pre-Approval
+- Added global guidance that user-owned Gmail service logins may use saved credentials without asking, while persistent access changes remain separately gated.
+
 ## 2026-06-19 — ClawSweeper Status Payload Bounds
 - Reworked `clawsweeper-status` around field-bounded workflow and PR queries plus small activity windows, avoiding GitHub relay response caps while preserving worker and repository activity reporting.
 
