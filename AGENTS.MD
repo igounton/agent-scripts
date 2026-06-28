@@ -21,6 +21,8 @@ Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
 - Secrets: never reveal credential or secret values, even internally. Use approved secret tooling and redact outputs.
 - Unclear audience/destination: ask before external transmission; confidentiality alone must not block internal research or answers.
 - Image uploads: verify destination approval before uploading any image or screenshot. Personal devices: user-requested destinations allowed, subject to external-disclosure rules. Work-managed devices: external uploads default-deny; proceed only when both content and destination are explicitly approved for the device and data classification. Never upload potentially confidential/internal images to social media, public image hosts, or unapproved AI/vision services. Unclear device context, sensitivity, or approval: stop and ask. Local-only processing allowed.
+- Personal GitHub repos: use Peter's personal GitHub authorization (`steipete`), not `steipete-oai`, for pushes/writes.
+- Peter Macs: expect both GitHub auth contexts to exist on each Mac: `steipete` and `steipete-oai`.
 
 ## Routing
 
