@@ -44,10 +44,11 @@ Repeat synchronization after every landing and before any release gate.
    - `Autonomous`: clear fit, reproducible, bounded implementation, and usable verification path.
    - `Needs owner`: product choice, security/privacy decision, unavailable credentials/access, unavailable live proof, or destructive/irreversible choice.
    - `Ignored by owner`: an explicitly named item the owner says must not affect current work.
-3. Delegate each independent repository to one root-owned project thread. Reuse it for later queue items and rename it to `<Project>: <short current task>` whenever work materially changes. The project thread handles its queue serially by default. Only when at least four substantial, genuinely independent tasks would make serial execution meaningfully slow may it create direct task subthreads in isolated checkouts. Never fan out two or three items, intertwined work, or trivial tasks. Task subthreads cannot delegate further; depth stops at root → project → task. Omit model selection and inherit the platform default.
-4. Keep this coordinator thread lightweight. Do not perform extensive repository work here. Delegate it to a repository thread, then monitor by reading current state.
-5. Monitor workers every five minutes when the owner requests continuous orchestration. Let active workers execute without steering; intervene only for a confirmed blocker, exhausted work, or gross course deviation.
-6. Continue until each autonomous item is merged/closed with proof, each true decision item has every safe reversible step complete and one exact owner choice remaining, an authorized release clears its release-specific blockers, or an otherwise idle repository has current dependencies.
+3. Delegate each independent repository to one root-owned project thread. Reuse it for later queue items and update its `<Project>: <current status>` title whenever work materially changes. The project thread handles its queue serially by default. Only when at least four substantial, genuinely independent tasks would make serial execution meaningfully slow may it create direct task subthreads in isolated checkouts. Never fan out two or three items, intertwined work, or trivial tasks. Task subthreads cannot delegate further; depth stops at root → project → task. Omit model selection and inherit the platform default.
+4. Maintain a target of 10 concurrent eligible root-owned project threads. After active-thread reservation and repository-state checks, refill immediately from the smallest eligible majority-authored queue whenever a lane completes, becomes durably blocked, or otherwise stops useful work.
+5. Keep this coordinator thread lightweight. Do not perform extensive repository work here. Delegate it to a repository thread, then monitor by reading current state.
+6. Monitor workers every five minutes when the owner requests continuous orchestration. Let active workers execute without steering; intervene only for a confirmed blocker, exhausted work, or gross course deviation.
+7. Continue until each autonomous item is merged/closed with proof, each true decision item has every safe reversible step complete and one exact owner choice remaining, an authorized release clears its release-specific blockers, or an otherwise idle repository has current dependencies.
 
 Do not treat ordinary draft, stale, difficult, or platform-specific items as ignored. Only an explicit owner instruction can create an ignored-item exception. Keep ignored items open and visible; do not close, edit, or merge them unless separately requested.
 
@@ -138,8 +139,8 @@ Never interrupt, archive, rename, duplicate, or replace a worker without first r
 
 ## Thread Naming
 
-- Rename a worker whenever giving it a new task or materially changing its assignment.
-- Format every worker title as `<Project>: <short current task>`.
+- Name every root-owned project thread `<Project>: <current status>` at creation and each material transition: reviewing, implementing, proving, waiting for CI, exact blocker, ready, or complete.
+- Put the project first; keep status terse, concrete, and current. Never use generic coordinate, orchestrate, or maintain labels when a specific status is known.
 - Read the latest state and newest thread-local instructions before renaming.
 - Keep the title specific to current work; replace stale original-task titles.
 - Polling alone does not justify a rename.
