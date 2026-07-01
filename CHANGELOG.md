@@ -4,6 +4,9 @@ summary: Timeline of guardrail helper changes mirrored from Sweetistics and rela
 
 # Changelog
 
+## 2026-07-01 — Isolated Skill Audits
+- Added `skill-cleaner --root-only` for auditing only explicitly supplied skill roots without Codex inventory noise. Thanks @its-How.
+
 ## 2026-07-01 — OSS Maintainer Orchestration
 - Expanded `maintainer-orchestrator` into a long-running control plane with one worker thread per repository, a 10-thread concurrency target with immediate smallest-queue refill, concrete status-based thread titles, safe repository synchronization, forgotten-work preservation, PR rewrite/deduplication, decision-ready risk and diff summaries, durable `VISION.md` policy capture, dependency audits, release proposals with strongest-first highlights, and a persistent daily log plus heartbeat.
 
