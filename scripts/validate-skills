@@ -37,7 +37,7 @@ errors = []
 names = {}
 
 skill_files.each do |path|
-  text = File.read(path)
+  text = File.read(path, encoding: "UTF-8")
   data, error = load_front_matter(path, text)
 
   if error
