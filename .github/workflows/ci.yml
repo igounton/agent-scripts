@@ -34,6 +34,9 @@ jobs:
       - name: Test ClawSweeper status helper
         run: skills/clawsweeper-status/scripts/clawsweeper-status.test.sh
 
+      - name: Test maintainer orchestrator worker boundary
+        run: scripts/test-maintainer-orchestrator-policy
+
       - name: Build browser helper
         run: |
           bun install --frozen-lockfile

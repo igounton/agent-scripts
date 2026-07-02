@@ -1,4 +1,4 @@
 interface:
   display_name: "Maintainer Orchestrator"
-  short_description: "Coordinate one thread per open-source project"
-  default_prompt: "Use $maintainer-orchestrator to synchronize repositories safely, protect forgotten work, autonomously implement, repair, review, land, and close eligible queue work, coordinate one project thread with bounded one-level task fan-out for large independent queues, capture durable vision decisions, audit dependencies, propose highlighted releases, maintain the daily log, and report clickable URLs with diff size, risk, proof, and recommendation."
+  short_description: "Coordinate Codex app project workers"
+  default_prompt: "Use $maintainer-orchestrator to coordinate repository execution in dedicated Codex app threads, keep collaboration subagents read-only and support-only, protect forgotten work, serialize exact-head landing, capture durable decisions, audit dependencies, and propose verified releases."

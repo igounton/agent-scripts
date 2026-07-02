@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+skill = File.read(File.expand_path("../skills/maintainer-orchestrator/SKILL.md", __dir__))
+metadata = File.read(File.expand_path("../skills/maintainer-orchestrator/agents/openai.yaml", __dir__))
+
+requirements = {
+  "Codex app workers only" => "a worker is an owned Codex app thread, never a collaboration subagent",
+  "pre-spawn classification" => "Before spawning a collaboration subagent, classify the task",
+  "mutating work routing" => "Any task that can mutate repository, GitHub, or external state",
+  "support-only subagents" => "Use collaboration subagents only for orchestration support",
+  "subagent mutation ban" => "Collaboration subagents must never edit repository files, create commits, run implementation proof as the owner, push, mutate PRs/issues, approve workflows, merge, release, deploy, or perform live product/account proof.",
+  "preservation-first recovery" => "Snapshot and preserve its state, patches, refs, logs, and evidence; hand them to the proper Codex app thread; reconcile ownership; never discard work.",
+  "thread-owned execution" => "Project execution remains owned and performed by its Codex app thread",
+}
+
+missing = requirements.reject { |_label, text| skill.include?(text) }
+abort "Missing maintainer-orchestrator policy: #{missing.keys.join(', ')}" unless missing.empty?
+abort "Ambiguous task subthread terminology" if skill.match?(/\bsubthreads?\b/i)
+abort "Stale maintainer-orchestrator default prompt" unless metadata.include?("dedicated Codex app threads") && metadata.include?("collaboration subagents read-only and support-only")
+
+puts "Validated maintainer-orchestrator worker boundary."

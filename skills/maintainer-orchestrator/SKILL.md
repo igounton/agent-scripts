@@ -1,16 +1,25 @@
 ---
 name: maintainer-orchestrator
-description: "Open-source maintainer orchestration: repo workers, work recovery, dependencies, vision, releases."
+description: "Open-source maintainer orchestration: Codex app workers, work recovery, dependencies, vision, releases."
 ---
 
 # Maintainer Orchestrator
 
-Coordinate repository work through completion. This is a control-plane skill: inspect, delegate, monitor, ask decisions, and report. Put substantial repository investigation, implementation, review, live proof, landing, and release execution in repository worker threads.
+Coordinate repository work through completion. This is a control-plane skill: inspect, delegate, monitor, ask decisions, and report. In this skill, a worker is an owned Codex app thread, never a collaboration subagent.
+
+## Worker Boundary — Hard Rule
+
+- Use dedicated Codex app threads as all implementation and execution workers. Prefer an existing owned thread/worktree when it already owns relevant state; otherwise create the proper project or task thread.
+- Before spawning a collaboration subagent, classify the task. Any task that can mutate repository, GitHub, or external state, or that owns a deliverable, implementation proof, landing, release, or deployment, must go to a Codex app thread.
+- Use collaboration subagents only for orchestration support: read-only inventory, CI/status monitoring, independent analysis, conflict/decision synthesis, or ledger/reconciliation evidence. They do not own worker lanes or count toward execution capacity.
+- Collaboration subagents must never edit repository files, create commits, run implementation proof as the owner, push, mutate PRs/issues, approve workflows, merge, release, deploy, or perform live product/account proof.
+- If an implementation subagent is discovered, interrupt it immediately. Snapshot and preserve its state, patches, refs, logs, and evidence; hand them to the proper Codex app thread; reconcile ownership; never discard work.
+- The root orchestrator coordinates app threads, reads evidence, sends GO/hold instructions, serializes exact-head landing, handles owner decisions, and cleans up the sidebar. Project execution remains owned and performed by its Codex app thread.
 
 ## Activation Watch
 
 - On every activation, immediately create or update one active five-minute heartbeat automation attached to the current root orchestrator thread. Name it `Maintainer Orchestrator Watch`; never create duplicates.
-- The heartbeat prompt must re-enter this skill, read the latest state and newest instructions in every owned worker, apply the Monitoring Protocol, coordinate serialized landing/release gates, root-triage and refill qualified execution work to the current concurrency target, check CI/leases/memory/disk, maintain the persistent log, and surface only prepared owner decisions.
+- The heartbeat prompt must re-enter this skill, read the latest state and newest instructions in every owned Codex app worker, apply the Monitoring Protocol, coordinate serialized landing/release gates, root-triage and refill qualified execution work to the current concurrency target, check CI/leases/memory/disk, maintain the persistent log, and surface only prepared owner decisions.
 - Keep the heartbeat active while any worker, owner decision, release, CI wait, or qualified refill work remains. Disable it only when the owner explicitly stops orchestration or the monitored portfolio is genuinely complete.
 - A heartbeat wake is a continuation of this root session, not a discovery worker. Keep portfolio triage and owner questions here; create repository/worktree threads only for concrete execution.
 
@@ -34,7 +43,7 @@ Apply this section only when the owner explicitly asks this session to orchestra
 - Keep all discovery and triage in the root orchestrator session. Refresh Discrawl; read current `#clawtributors` and `#maintainers` messages; inspect candidate issue/PR URLs, related items, current `main`, author permissions, duplicates, blast radius, and verification feasibility; then make the go/no-go and autonomy classification before creating a worker. Use Gitcrawl for related items and live `gh` before every assignment, comment, close, push, or merge.
 - Select only work authored or reported by people without GitHub `write`, `maintain`, or `admin` access. Verify repository permission live; never infer GitHub access from a Discord role or channel membership. External contributors posting in `#maintainers` remain eligible.
 - At startup, read and adopt existing OpenClaw work threads the owner asks this session to maintain. Preserve unique progress, avoid duplicate lanes, and monitor or steer them under the newest thread-local instruction.
-- Maintain a target of 30 active root-owned implementation threads while 30 qualified independent tasks exist. Create a thread only for concrete execution after root triage has selected an issue or PR and defined the actual fix, review-and-land, live-proof, CI-repair, or close-with-proof objective. Never create discovery, queue-scan, permission-check, candidate-review, ranking, or general triage threads. Use one isolated Codex worktree thread per selected task, title it `OC <ref>: <current status>`, and prohibit worker delegation. The root orchestrator alone creates, steers, archives, and refills these lanes.
+- Maintain a target of 30 active root-owned implementation Codex app threads while 30 qualified independent tasks exist. Create a thread only for concrete execution after root triage has selected an issue or PR and defined the actual fix, review-and-land, live-proof, CI-repair, or close-with-proof objective. Never create discovery, queue-scan, permission-check, candidate-review, ranking, or general triage threads. Use one isolated Codex worktree thread per selected task, title it `OC <ref>: <current status>`, and prohibit worker delegation. The root orchestrator alone creates, steers, archives, and refills these lanes.
 - Keep owner questions in the root orchestrator chat. Workers report exact blockers upward and do not ask the owner directly unless the root explicitly delegates that interaction.
 - Prioritize Vision-aligned security/safe-default, bug/stability, setup/first-run, data-loss, auth, install, channel-delivery, and narrow performance/test-infrastructure work. Prefer externally reported, reproducible, bounded items with a real verification path.
 - Treat broad features, protocol-version changes, new config/env/default surfaces, new core plugins/channels/providers, security/privacy policy, irreversible migration choices, or behavior without usable live proof as `Needs owner` after every safe reversible step is complete.
@@ -49,7 +58,7 @@ Apply this section only when the owner explicitly asks this session to orchestra
 ## Session Startup
 
 1. Create or update the required `Maintainer Orchestrator Watch` heartbeat before queue work.
-2. List recent Codex threads before choosing repositories. Read enough state to identify repositories the owner or another coordinator is actively handling.
+2. List recent Codex app threads before choosing repositories. Read enough state to identify repositories the owner or another coordinator is actively handling.
 3. Reserve every project with coherent active or unresolved work in another thread. Do not inspect, mutate, delegate, rename, or steer that project from this session unless the owner explicitly hands it over.
 4. When a local checkout is dirty or on a non-default branch but has no active thread, create one preservation thread for that repository. Treat it as potentially valuable forgotten work, not as a reason to ignore the project.
 5. Use RepoBar for the broad queue map. Filter to eligible, non-archived, non-fork repositories, then confirm Peter has the majority of contributions.
@@ -75,10 +84,10 @@ Repeat synchronization after every landing and before any release gate.
    - `Autonomous`: clear fit, reproducible, bounded implementation, and usable verification path.
    - `Needs owner`: product choice, security/privacy decision, unavailable credentials/access, unavailable live proof, or destructive/irreversible choice.
    - `Ignored by owner`: an explicitly named item the owner says must not affect current work.
-3. Delegate each independent repository to one root-owned project thread. Reuse it for later queue items and update its `<Project>: <current status>` title whenever work materially changes. The project thread handles its queue serially by default. Only when at least four substantial, genuinely independent tasks would make serial execution meaningfully slow may it create direct task subthreads in isolated checkouts. Never fan out two or three items, intertwined work, or trivial tasks. Task subthreads cannot delegate further; depth stops at root → project → task. Omit model selection and inherit the platform default.
-4. Maintain a target of 30 concurrent eligible root-owned project threads. After active-thread reservation and repository-state checks, refill immediately from the smallest eligible majority-authored queue whenever a lane completes, becomes durably blocked, or otherwise stops useful work.
-5. Keep this coordinator thread lightweight. Do not perform extensive repository work here. Delegate it to a repository thread, then monitor by reading current state.
-6. Monitor workers every five minutes when the owner requests continuous orchestration. Let active workers execute without steering; intervene only for a confirmed blocker, exhausted work, or gross course deviation.
+3. Delegate each independent repository to one root-owned Codex app project thread. Reuse it for later queue items and update its `<Project>: <current status>` title whenever work materially changes. The project thread handles its queue serially by default. Only when at least four substantial, genuinely independent tasks would make serial execution meaningfully slow may it create direct Codex app task threads in isolated checkouts. Never fan out two or three items, intertwined work, or trivial tasks. Task threads cannot delegate further; depth stops at root → project → task. Omit model selection and inherit the platform default.
+4. Maintain a target of 30 concurrent eligible root-owned Codex app project threads. After active-thread reservation and repository-state checks, refill immediately from the smallest eligible majority-authored queue whenever a lane completes, becomes durably blocked, or otherwise stops useful work.
+5. Keep this coordinator thread lightweight. Do not perform extensive repository work here. Delegate it to a repository Codex app thread, then monitor by reading current state.
+6. Monitor Codex app workers every five minutes when the owner requests continuous orchestration. Let active workers execute without steering; intervene only for a confirmed blocker, exhausted work, or gross course deviation.
 7. Continue until each autonomous item is merged/closed with proof, each true decision item has every safe reversible step complete and one exact owner choice remaining, an authorized release clears its release-specific blockers, or an otherwise idle repository has current dependencies.
 
 Do not treat ordinary draft, stale, difficult, or platform-specific items as ignored. Only an explicit owner instruction can create an ignored-item exception. Keep ignored items open and visible; do not close, edit, or merge them unless separately requested.
@@ -92,11 +101,11 @@ Do not treat ordinary draft, stale, difficult, or platform-specific items as ign
 
 ## Control-Plane Ownership
 
-- Only this root orchestrator may create, reuse, archive, or steer project threads. Each project worker owns its thread title so the title follows the freshest repository state without a root-poll race.
-- A project thread may create, assign, monitor, and retire only its own direct task subthreads under the threshold above. It owns their integration and reports one coherent repository result to the root.
-- Task subthreads must not create workers, delegate, or manage other chats. No grandchildren.
+- Only this root orchestrator may create, reuse, archive, or steer project Codex app threads. Each project worker owns its thread title so the title follows the freshest repository state without a root-poll race.
+- A project thread may create, assign, monitor, and retire only its own direct Codex app task threads under the threshold above. It owns their integration and reports one coherent repository result to the root.
+- Task threads must not create workers, delegate, or manage other chats. No grandchildren.
 - Repository-specific questions belong in that repository's worker thread. Keep the root thread for cross-repository summaries, scheduling, conflicts, and owner-level prioritization.
-- Put the one-level limit in every project prompt and the no-subdelegation rule in every task-subthread prompt.
+- Put the one-level limit in every project prompt and the no-subdelegation rule in every task-thread prompt.
 - Do not delegate portfolio triage or cross-repository thread management.
 - Legacy nested coordinators: stop further delegation immediately, preserve unique context while their existing workers finish, then retire them after reading current state.
 
@@ -214,7 +223,7 @@ Always perform a dependency-freshness check before closing a repository work bat
 
 ## Authorization
 
-The owner grants standing autonomous authority for in-scope repository queue work coordinated by this session. Project threads may synchronize clean checkouts; edit; create branches; commit; push; open or update PRs; write proof/review/close comments; approve, rerun, and repair CI; merge supported exact-head green changes; close resolved or invalid items; and return to synchronized clean `main`. Do not request per-item permission to implement, repair, improve, rewrite, publish a PR, fix CI, or land clearly supported work.
+The owner grants standing autonomous authority for in-scope repository queue work coordinated by this session. Project Codex app threads may synchronize clean checkouts; edit; create branches; commit; push; open or update PRs; write proof/review/close comments; approve, rerun, and repair CI; merge supported exact-head green changes; close resolved or invalid items; and return to synchronized clean `main`. Do not request per-item permission to implement, repair, improve, rewrite, publish a PR, fix CI, or land clearly supported work.
 
 This standing authority does not include:
 
@@ -237,9 +246,9 @@ Assume most maintainer credentials are stored in 1Password. Before reporting a c
 
 Keep credential discovery and use inside the worker that needs the secret. Report only presence, access path, and the exact missing approval or item; never send credentials between threads.
 
-## Worker Contract
+## Codex App Worker Contract
 
-Every delegated implementation thread, under standing authority and any newer project-specific limits, must:
+Every delegated implementation Codex app thread, under standing authority and any newer project-specific limits, must:
 
 - read the full issue/PR discussion, repo instructions, docs, and relevant code;
 - when an issue has no PR, create one after implementing the best bounded candidate;
