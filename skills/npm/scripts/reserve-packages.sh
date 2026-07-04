@@ -1,28 +1,34 @@
 #!/usr/bin/env bash
 set -euo pipefail
 set +x
+umask 077
 
 usage() {
   cat <<'USAGE'
 Usage:
-  reserve-packages.sh [--dry-run] [--account ACCOUNT] [--item ITEM] <package...>
+  reserve-packages.sh [--dry-run] [--vault VAULT] [--item ITEM] [--account ACCOUNT] <package...>
 
 Publishes 0.0.0 placeholder packages to npm to reserve names.
 
 Security:
-  Must run inside tmux. Reads the npm 1Password item once, creates a temp npmrc,
-  publishes packages, then deletes temp auth/work files. Secret values are never
-  printed.
+  Must run inside tmux. Defaults to the Molty service-account item, creates a
+  temp npmrc, publishes packages, then deletes temp auth/work files. --account
+  opts into an interactive desktop-vault fallback. Secrets are never printed.
 
 Defaults:
-  account:  my.1password.com
-  item:     npmjs
+  vault:    Molty
+  item:     npm Registry - steipete - Release Automation
   registry: https://registry.npmjs.org/
 USAGE
 }
 
-ACCOUNT="${NPM_OP_ACCOUNT:-my.1password.com}"
-ITEM="${NPM_OP_ITEM:-npmjs}"
+VAULT="${NPM_OP_VAULT:-Molty}"
+ITEM="${NPM_OP_ITEM:-npm Registry - steipete - Release Automation}"
+ITEM_EXPLICIT=0
+if [ -n "${NPM_OP_ITEM:-}" ]; then
+  ITEM_EXPLICIT=1
+fi
+ACCOUNT=""
 REGISTRY="${NPM_REGISTRY:-https://registry.npmjs.org/}"
 DRY_RUN=0
 PACKAGES=()
@@ -33,15 +39,20 @@ while [ "$#" -gt 0 ]; do
       DRY_RUN=1
       shift
       ;;
-    --account)
-      ACCOUNT="${2:?missing account}"
+    --vault)
+      VAULT="${2:?missing vault}"
       shift 2
       ;;
     --item)
       ITEM="${2:?missing item}"
+      ITEM_EXPLICIT=1
       shift 2
       ;;
-    -h|--help)
+    --account)
+      ACCOUNT="${2:?missing account}"
+      shift 2
+      ;;
+    -h | --help)
       usage
       exit 0
       ;;
@@ -62,6 +73,11 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
+# Desktop fallback keeps the legacy item name unless one was named explicitly.
+if [ -n "$ACCOUNT" ] && [ "$ITEM_EXPLICIT" -eq 0 ]; then
+  ITEM="npmjs"
+fi
+
 if [ "${#PACKAGES[@]}" -eq 0 ]; then
   usage >&2
   exit 2
@@ -72,75 +88,28 @@ if [ -z "${TMUX:-}" ]; then
   exit 2
 fi
 
-need_bin() {
-  command -v "$1" >/dev/null 2>&1 || {
-    echo "missing required binary: $1" >&2
+for bin in op jq node npm; do
+  command -v "$bin" >/dev/null 2>&1 || {
+    echo "missing required binary: $bin" >&2
     exit 2
   }
-}
+done
 
-need_bin op
-need_bin node
-need_bin npm
-
-WORK="$(mktemp -d /tmp/npm-reserve.XXXXXX)"
-NPMRC="/tmp/npm-reserve-npmrc.$$"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORK="$(mktemp -d /tmp/npm-reserve.XXXXXX)"
+NPMRC="$WORK/npmrc"
 cleanup() {
-  rm -rf "$WORK" "$NPMRC"
-  unset ITEM_JSON NPM_OTP NPMRC REGISTRY SA_TOKEN
+  rm -rf "$WORK"
+  unset ITEM_JSON NPM_OTP
 }
 trap cleanup EXIT
 
-redact() {
-  sed -E 's/(npm_[A-Za-z0-9_]+)/npm_REDACTED/g; s/[0-9]{6}/OTP_REDACTED/g'
-}
+# shellcheck source=npm-auth.sh
+source "$SCRIPT_DIR/npm-auth.sh"
 
-SA_TOKEN="${OP_SERVICE_ACCOUNT_TOKEN:-${MOLTY_OP_SERVICE_ACCOUNT_TOKEN:-}}"
-AUTH_MODE="desktop"
-if [ -n "$SA_TOKEN" ] && ITEM_JSON="$(OP_SERVICE_ACCOUNT_TOKEN="$SA_TOKEN" op item get "$ITEM" --vault Molty --format json 2>/dev/null)"; then
-  AUTH_MODE="service"
-  echo "1Password access: service account"
-else
-  unset OP_SERVICE_ACCOUNT_TOKEN MOLTY_OP_SERVICE_ACCOUNT_TOKEN SA_TOKEN
-  op signin --account "$ACCOUNT" >/dev/null
-  op whoami --account "$ACCOUNT" >/dev/null
-  ITEM_JSON="$(op item get "$ITEM" --account "$ACCOUNT" --format json)"
-  echo "1Password access: desktop"
-fi
-echo "op auth ok; reading npm item once: $ITEM"
-
-current_otp() {
-  if [ "$AUTH_MODE" = "service" ]; then
-    OP_SERVICE_ACCOUNT_TOKEN="$SA_TOKEN" op item get "$ITEM" --vault Molty --otp 2>/dev/null | tr -d '[:space:]' || true
-  else
-    op item get "$ITEM" --account "$ACCOUNT" --otp 2>/dev/null | tr -d '[:space:]' || true
-  fi
-}
-
-NPM_OTP="$(current_otp)"
-case "$NPM_OTP" in
-  [0-9][0-9][0-9][0-9][0-9][0-9]) ;;
-  "")
-    echo "$ITEM has no usable six-digit OTP field" >&2
-    exit 3
-    ;;
-  *)
-    echo "$ITEM OTP output is not six digits; refusing to use it" >&2
-    exit 3
-    ;;
-esac
-
-login_log="$WORK/npm-login.log"
-printf "%s" "$ITEM_JSON" |
-  NPM_OTP="$NPM_OTP" NPMRC="$NPMRC" REGISTRY="$REGISTRY" \
-  node "$SCRIPT_DIR/npm-auth-login.mjs" >"$login_log" 2>&1 || {
-  echo "npm registry login failed" >&2
-  redact <"$login_log" >&2
-  exit 3
-}
+resolve_op_item
+ensure_npm_auth
 unset ITEM_JSON
-redact <"$login_log"
 
 who="$(NPM_CONFIG_USERCONFIG="$NPMRC" npm whoami 2>"$WORK/npm-whoami.log" || true)"
 if [ -z "$who" ]; then
@@ -171,7 +140,7 @@ reserve_pkg() {
 
   local dir="$WORK/$name"
   mkdir -p "$dir"
-  cp "$WORK/README.md" "$dir/README.md"
+  command cp -f "$WORK/README.md" "$dir/README.md"
   cat > "$dir/package.json" <<EOF
 {
   "name": "$name",
@@ -192,7 +161,7 @@ EOF
   local log="$WORK/npm-publish-$safe_name.log"
   local otp
   otp="$(current_otp)"
-  if [ -n "$otp" ] && (cd "$dir" && NPM_CONFIG_USERCONFIG="$NPMRC" npm publish --access public --otp "$otp" >"$log" 2>&1); then
+  if [ -n "$otp" ] && (cd "$dir" && NPM_CONFIG_USERCONFIG="$NPMRC" NPM_CONFIG_OTP="$otp" npm publish --access public >"$log" 2>&1); then
     echo "published: $name"
     return 0
   fi
@@ -201,7 +170,7 @@ EOF
     echo "publish needs/failed OTP for $name; retrying once with fresh OTP" >&2
     sleep 31
     otp="$(current_otp)"
-    if [ -n "$otp" ] && (cd "$dir" && NPM_CONFIG_USERCONFIG="$NPMRC" npm publish --access public --otp "$otp" >"$log" 2>&1); then
+    if [ -n "$otp" ] && (cd "$dir" && NPM_CONFIG_USERCONFIG="$NPMRC" NPM_CONFIG_OTP="$otp" npm publish --access public >"$log" 2>&1); then
       echo "published: $name"
       return 0
     fi

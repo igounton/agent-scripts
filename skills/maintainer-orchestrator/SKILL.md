@@ -89,7 +89,11 @@ Repeat synchronization after every landing and before any release gate.
    - `Ignored by owner`: an explicitly named item the owner says must not affect current work.
 3. Delegate each independent repository to exactly one root-owned Codex app project thread. Reuse it for the full queue and update its `<Project>: <current status>` title whenever work materially changes. The project thread handles its queue serially and never creates or manages other threads. Omit model selection and inherit the platform default.
 4. Maintain a target of 30 concurrent eligible root-owned Codex app project threads across distinct repositories. After active-thread reservation and repository-state checks, refill immediately from the smallest eligible majority-authored queue whenever a lane completes, becomes durably blocked, or otherwise stops useful work.
-5. Hard concurrency invariant: private investigation, implementation, current-main replay, testing, proof, and review continue independently across qualified project threads for distinct repositories. Exactly one project thread at a time may mutate a public PR head or run a final preparation, synchronization, merge, release, or publication gate. Asking the owner what to land next reserves only that public slot; it never pauses useful private work in other project threads. `Frozen`, `parked`, or `held` means public-mutation-frozen unless the instruction explicitly freezes all private work.
+5. Public gate — forward-looking, never preemptive:
+   - Use the gate only before admitting a new push, PR mutation, workflow approval/rerun, final synchronization, merge, release, or publication action. Local work and passive CI/review polling do not consume it.
+   - A project already executing an owner- or root-authorized public sequence keeps running to its natural safe boundary. Never inject a hold, cancel work, or interrupt a coherent active worker merely because another project later entered the gate.
+   - If multiple public sequences are already in flight, do not choose a winner retroactively. Let them finish coherently, admit no additional public action until the overlap clears, and preserve every worker's current state.
+   - Private investigation, implementation, testing, proof, and review continue independently. Asking the owner what to land next reserves only the next admission; it never pauses active work. `Frozen`, `parked`, or `held` means public-mutation-frozen only when that restriction existed before the worker crossed the public boundary.
 6. Keep this coordinator thread lightweight. Do not perform extensive repository work here. Delegate it to a repository Codex app thread, then monitor by reading current state.
 7. Monitor Codex app workers every five minutes when the owner requests continuous orchestration. Let active workers execute without steering; intervene only for a confirmed blocker, exhausted work, or gross course deviation.
 8. Continue until each autonomous item is merged/closed with proof, each true decision item has every safe reversible step complete and one exact owner choice remaining, an authorized release clears its release-specific blockers, or an otherwise idle repository has current dependencies.
@@ -105,8 +109,9 @@ Do not treat ordinary draft, stale, difficult, or platform-specific items as ign
 
 ## Control-Plane Ownership
 
-- Only this root orchestrator may create, reuse, archive, or steer project Codex app threads. Each project worker owns its thread title so the title follows the freshest repository state without a root-poll race.
-- Project threads must not create, assign, steer, monitor, or retire other threads. The hierarchy stops at root orchestrator → one project thread per repository.
+- Only this root orchestrator may create, reuse, archive, steer, or rename project Codex app threads. Preserve the owner-set root thread title; never rename the root orchestrator thread.
+- Every title mutation must originate here and pass the exact worker `threadId`. Never ask a worker to rename itself or use a self-targeting title call.
+- Project threads must not create, assign, steer, monitor, rename, or retire threads. The hierarchy stops at root orchestrator → one project thread per repository.
 - Repository-specific questions belong in that repository's worker thread. Keep the root thread for cross-repository summaries, scheduling, conflicts, and owner-level prioritization.
 - Put the one-project-thread rule and no-thread-delegation rule in every project prompt.
 - Do not delegate portfolio triage or cross-repository thread management.
@@ -173,6 +178,8 @@ Before sending any worker message:
 4. Determine whether the worker is actively progressing, blocked, completed, or idle.
 5. Send nothing when an active worker has a coherent plan and is making progress.
 
+Scheduling is not an intervention trigger. The public gate may delay a not-yet-started public action; it never justifies pausing or redirecting a coherent worker already executing under owner or root authority. Direct owner steering immediately supersedes root scheduling.
+
 Intervene only when evidence shows one of:
 
 - the worker explicitly requests coordination or reports a blocker;
@@ -194,15 +201,16 @@ Never interrupt, archive, rename, duplicate, or replace a worker without first r
 
 ## Thread Naming
 
-- Root sets the initial `<Project>: <current status>` title. The project worker self-renames on every material transition: reviewing, implementing, proving, waiting for CI, exact blocker, ready, or complete.
+- These rules apply only to project worker threads. Never change the root orchestrator title.
+- Root sets and updates each worker's `<Project>: <current status>` title with an explicit worker `threadId`, after reading its latest state and newest thread-local instruction.
+- Workers report material transitions; they never invoke title tools or receive `rename yourself` instructions.
 - Put the project first; keep status terse, concrete, and current. Never use generic coordinate, orchestrate, or maintain labels when a specific status is known.
 - Use `<Project>: done — <concrete result>` for terminal success before archiving; name the shipped or closed outcome, not merely `complete`.
 - Use `waiting` only while the named external gate is verifiably pending and the worker turn remains active. The moment it succeeds, fails, or becomes irrelevant, replace the title with the next action, exact blocker, or `done`.
-- Immediately before any final answer, self-rename to `<Project>: done — <concrete result>`, `<Project>: needs owner — <exact blocker>`, or `<Project>: failed — <platform failure>`.
-- Read the latest state and newest thread-local instructions before renaming.
+- On observed terminal state, root sets `<Project>: done — <concrete result>`, `<Project>: needs owner — <exact blocker>`, or `<Project>: failed — <platform failure>` on that worker thread.
 - Keep the title specific to current work; replace stale original-task titles.
 - Polling alone does not justify a rename.
-- Root audits every owned title on each wake. Never leave landed, closed, released, or otherwise terminal work labeled as waiting, maintenance, reviewing, or implementing. If a title is stale, send the active worker one concise correction after reading its latest state; do not overwrite the title from a stale root snapshot. Finished or unaddressable threads are excluded from active capacity.
+- Root audits every owned worker title on each wake. Never leave landed, closed, released, or otherwise terminal work labeled as waiting, maintenance, reviewing, or implementing. If a title is stale, update the explicit worker thread after reading its latest state; never send a title instruction into the worker. Finished or unaddressable threads are excluded from active capacity.
 
 ## Persistent Log
 

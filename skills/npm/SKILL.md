@@ -12,15 +12,15 @@ Use for npm registry/account tasks: `npm whoami`, package availability, package 
 
 - Use `one-password` first for secret rules.
 - Never run `op` directly in the shell tool.
-- Known npm 1Password item: `npmjs` on `my.1password.com`.
-- The item may contain username/password/TOTP, not a stored npm token. That is fine.
-- Explicit user requests to `release`, `publish`, or `npm publish` are consent to complete npm auth, including a desktop 1Password sign-in/unlock prompt for the known `npmjs` item when service-account access cannot read it. Do not stop to ask for separate permission just because the npm auth prompt is expected.
-- Still stop and ask if the `npmjs` item is missing, the account/vault is ambiguous, credentials are malformed, npm denies package access, or the requested package/version does not match the repo release target.
+- Primary item: `npm Registry - steipete - Release Automation` in `Molty`.
+- Default to `OP_SERVICE_ACCOUNT_TOKEN`; no desktop unlock. The item carries the working registry session (`registry_token`) plus username/password/TOTP fallback.
+- Desktop `npmjs` fallback is explicit only: pass `--account my.1password.com` when Molty is unavailable and the user wants the fallback. Explicit `release`/`publish` requests are consent for its unlock prompt.
+- Stop and ask if the item is missing, the account/vault is ambiguous, credentials are malformed, npm denies package access, or the requested package/version does not match the repo release target.
 - Run npm auth work inside one persistent tmux session. Reuse it on failure.
 - Keep npm auth in a temp npmrc; delete it after the command.
-- For normal package releases, run `scripts/publish-package.sh` from the package root inside that tmux session. Do not hand-roll field extraction or registry login.
-- Credential selection must prefer canonical field `id`, then `purpose`, then a unique label. Reject duplicate label-only matches; `npmjs` can retain legacy fields with the same label.
-- If hand-rolling is unavoidable, use `scripts/npm-auth-login.mjs` for field selection and registry login. Read `npmjs` once, require a six-digit OTP, keep auth in a temp npmrc, then delete it and unset variables.
+- All helpers share `scripts/npm-auth.sh`: stored `registry_token` session first, then `scripts/npm-auth-login.mjs` registry login with a fresh six-digit OTP. Do not hand-roll field extraction or registry login.
+- Credential selection prefers canonical field `id`, then `purpose`, then a unique label; duplicate label-only matches are rejected (legacy `npmjs` may retain same-label fields).
+- For ad-hoc authenticated npm commands, use `scripts/npm-service.sh -- <npm args...>`.
 - npm 11 prompt piping is brittle; avoid `printf ... | npm login --auth-type=legacy`.
 - Avoid `expect` for npm login unless necessary; logs can echo prompts and are easy to get wrong.
 - Prefer the helper's registry API login path (`npm-profile` `loginCouch`) for automation.
@@ -45,8 +45,8 @@ Use `scripts/reserve-packages.sh` from inside the same tmux session:
 ```
 
 What it does:
-- reads `npmjs` once via `op`
-- creates an npm registry session from username/password/TOTP
+- reads the Molty release-automation item once via `op`
+- reuses the stored registry session or creates one from username/password/TOTP
 - publishes `0.0.0` placeholder packages with a generic README
 - continues after per-package publish failures
 - redacts tokens/OTP in logs

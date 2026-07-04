@@ -19,7 +19,7 @@ Use for macOS screen capture, UI inspection, and GUI automation.
 - The app owns TCC grants and serves `~/Library/Application Support/Peekaboo/bridge.sock`.
 - Installed app: `open -a Peekaboo`. Repo build: build the `Apps/Mac/Peekaboo.xcodeproj` `Peekaboo` scheme, then open the resulting `Peekaboo.app`.
 - `peekaboo daemon start` is not an app launch; the daemon has separate permissions and `daemon.sock`.
-- Verify `peekaboo bridge status --verbose --json --bridge-socket "$HOME/Library/Application Support/Peekaboo/bridge.sock"` selects `hostKind: gui`.
+- Verify `peekaboo bridge status --verbose --json` selects `hostKind: gui`; use `--bridge-socket "$HOME/Library/Application Support/Peekaboo/bridge.sock"` when deterministic app routing matters.
 
 ## Safety
 
@@ -37,9 +37,9 @@ Use for macOS screen capture, UI inspection, and GUI automation.
 PB="${PEEKABOO_BIN:-$HOME/bin/peekaboo}"
 [ -x "$PB" ] || PB="$(command -v peekaboo)"
 
-open -a Peekaboo
-"$PB" bridge status --verbose --json --bridge-socket "$HOME/Library/Application Support/Peekaboo/bridge.sock"
 "$PB" permissions status --json
+open -a Peekaboo
+"$PB" bridge status --verbose --json
 "$PB" list screens --json
 "$PB" list apps --json
 "$PB" list windows --app Safari --json

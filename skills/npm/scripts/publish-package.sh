@@ -1,27 +1,36 @@
 #!/usr/bin/env bash
 set -euo pipefail
 set +x
+umask 077
 
 usage() {
   cat <<'USAGE'
 Usage:
-  publish-package.sh [--account ACCOUNT] [--item ITEM] [--access ACCESS] [--tag TAG]
+  publish-package.sh [--vault VAULT] [--item ITEM] [--account ACCOUNT] [--access ACCESS] [--tag TAG]
 
 Publishes the package in the current directory through a temporary authenticated
 npmrc. Must run inside the persistent tmux session used for 1Password access.
+Defaults to the Molty service-account item; --account opts into an interactive
+desktop-vault fallback.
 USAGE
 }
 
-ACCOUNT="${NPM_OP_ACCOUNT:-my.1password.com}"
-ITEM="${NPM_OP_ITEM:-npmjs}"
+VAULT="${NPM_OP_VAULT:-Molty}"
+ITEM="${NPM_OP_ITEM:-npm Registry - steipete - Release Automation}"
+ITEM_EXPLICIT=0
+if [ -n "${NPM_OP_ITEM:-}" ]; then
+  ITEM_EXPLICIT=1
+fi
+ACCOUNT=""
 REGISTRY="${NPM_REGISTRY:-https://registry.npmjs.org/}"
 ACCESS="public"
 TAG="latest"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --vault) VAULT="${2:?missing vault}"; shift 2 ;;
+    --item) ITEM="${2:?missing item}"; ITEM_EXPLICIT=1; shift 2 ;;
     --account) ACCOUNT="${2:?missing account}"; shift 2 ;;
-    --item) ITEM="${2:?missing item}"; shift 2 ;;
     --access) ACCESS="${2:?missing access}"; shift 2 ;;
     --tag) TAG="${2:?missing tag}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
@@ -29,12 +38,17 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
+# Desktop fallback keeps the legacy item name unless one was named explicitly.
+if [ -n "$ACCOUNT" ] && [ "$ITEM_EXPLICIT" -eq 0 ]; then
+  ITEM="npmjs"
+fi
+
 if [ -z "${TMUX:-}" ]; then
   echo "refusing to run: npm auth must stay inside one persistent tmux session" >&2
   exit 2
 fi
 
-for bin in op node npm; do
+for bin in op jq node npm; do
   command -v "$bin" >/dev/null 2>&1 || { echo "missing required binary: $bin" >&2; exit 2; }
 done
 test -f package.json || { echo "package.json not found in current directory" >&2; exit 2; }
@@ -42,15 +56,12 @@ test -f package.json || { echo "package.json not found in current directory" >&2
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK="$(mktemp -d /tmp/npm-publish.XXXXXX)"
 NPMRC="$WORK/npmrc"
+# shellcheck disable=SC2329 # invoked via trap EXIT
 cleanup() {
   rm -rf "$WORK"
-  unset ITEM_JSON NPM_OTP NPMRC SA_TOKEN
+  unset ITEM_JSON NPM_OTP
 }
 trap cleanup EXIT
-
-redact() {
-  sed -E 's/(npm_[A-Za-z0-9_]+)/npm_REDACTED/g; s/[0-9]{6}/OTP_REDACTED/g'
-}
 
 name="$(node -p 'require("./package.json").name')"
 version="$(node -p 'require("./package.json").version')"
@@ -59,43 +70,12 @@ if npm view "$name@$version" version >/dev/null 2>&1; then
   exit 5
 fi
 
-SA_TOKEN="${OP_SERVICE_ACCOUNT_TOKEN:-${MOLTY_OP_SERVICE_ACCOUNT_TOKEN:-}}"
-AUTH_MODE="desktop"
-if [ -n "$SA_TOKEN" ] && ITEM_JSON="$(OP_SERVICE_ACCOUNT_TOKEN="$SA_TOKEN" op item get "$ITEM" --vault Molty --format json 2>/dev/null)"; then
-  AUTH_MODE="service"
-  echo "1Password access: service account"
-else
-  unset OP_SERVICE_ACCOUNT_TOKEN MOLTY_OP_SERVICE_ACCOUNT_TOKEN SA_TOKEN
-  op signin --account "$ACCOUNT" >/dev/null
-  op whoami --account "$ACCOUNT" >/dev/null
-  ITEM_JSON="$(op item get "$ITEM" --account "$ACCOUNT" --format json)"
-  echo "1Password access: desktop"
-fi
+# shellcheck source=npm-auth.sh
+source "$SCRIPT_DIR/npm-auth.sh"
 
-current_otp() {
-  if [ "$AUTH_MODE" = "service" ]; then
-    OP_SERVICE_ACCOUNT_TOKEN="$SA_TOKEN" op item get "$ITEM" --vault Molty --otp 2>/dev/null | tr -d '[:space:]'
-  else
-    op item get "$ITEM" --account "$ACCOUNT" --otp 2>/dev/null | tr -d '[:space:]'
-  fi
-}
-
-NPM_OTP="$(current_otp)"
-case "$NPM_OTP" in
-  [0-9][0-9][0-9][0-9][0-9][0-9]) ;;
-  *) echo "$ITEM has no usable six-digit OTP field" >&2; exit 3 ;;
-esac
-
-login_log="$WORK/npm-login.log"
-printf "%s" "$ITEM_JSON" |
-  NPM_OTP="$NPM_OTP" NPMRC="$NPMRC" REGISTRY="$REGISTRY" \
-  node "$SCRIPT_DIR/npm-auth-login.mjs" >"$login_log" 2>&1 || {
-    echo "npm registry login failed" >&2
-    redact <"$login_log" >&2
-    exit 3
-  }
+resolve_op_item
+ensure_npm_auth
 unset ITEM_JSON
-redact <"$login_log"
 
 who="$(NPM_CONFIG_USERCONFIG="$NPMRC" npm whoami 2>"$WORK/npm-whoami.log" || true)"
 if [ -z "$who" ]; then
@@ -106,12 +86,13 @@ fi
 echo "npm auth ok as $who"
 
 publish_log="$WORK/npm-publish.log"
-NPM_OTP="$(current_otp)"
-if ! NPM_CONFIG_USERCONFIG="$NPMRC" npm publish --access "$ACCESS" --tag "$TAG" --otp "$NPM_OTP" >"$publish_log" 2>&1; then
+otp="$(fresh_command_otp)"
+if ! NPM_CONFIG_USERCONFIG="$NPMRC" NPM_CONFIG_OTP="$otp" npm publish --access "$ACCESS" --tag "$TAG" >"$publish_log" 2>&1; then
   if grep -qiE 'otp|one-time|two-factor|2fa|EOTP' "$publish_log"; then
     echo "publish OTP expired; retrying once with a fresh OTP" >&2
-    NPM_OTP="$(current_otp)"
-    NPM_CONFIG_USERCONFIG="$NPMRC" npm publish --access "$ACCESS" --tag "$TAG" --otp "$NPM_OTP" >"$publish_log" 2>&1 || {
+    sleep 31
+    otp="$(current_otp)"
+    NPM_CONFIG_USERCONFIG="$NPMRC" NPM_CONFIG_OTP="$otp" npm publish --access "$ACCESS" --tag "$TAG" >"$publish_log" 2>&1 || {
       redact <"$publish_log" >&2
       exit 6
     }

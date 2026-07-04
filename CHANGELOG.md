@@ -4,6 +4,15 @@ summary: Timeline of guardrail helper changes mirrored from Sweetistics and rela
 
 # Changelog
 
+## 2026-07-03 — npm Service-Account Auth
+- Unified the npm helpers on a shared `npm-auth.sh`: Molty service-account item by default with stored registry-session reuse, hardened `npm-auth-login.mjs` login fallback, explicit `--account` desktop fallback, and a generic `npm-service.sh` wrapper for authenticated npm commands.
+
+## 2026-07-03 — Orchestrator Public Gate
+- Made the maintainer-orchestrator public gate forward-looking (never preemptive), moved worker thread titles to root-only mutation with explicit thread ids, and refreshed the non-majority repository snapshot.
+
+## 2026-07-03 — Canonical Test Email
+- Fixed the shared test email to `clawdbot@gmail.com`; the `gog+clawdbot@gmail.com` alias never existed.
+
 ## 2026-07-03 — Claude Skill Mirror
 - Added `scripts/sync-skills`: builds the per-machine skill mirror (Codex whole-root links, flat per-skill Claude links with agent-scripts > manager > codex-local priority, shared `AGENTS.MD` pointers) since Claude Code only scans `~/.claude/skills` one level deep; documented the layout in the README.
 

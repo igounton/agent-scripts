@@ -33,7 +33,7 @@ Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
 - 1Password interactive timeout: use `sag` to call Peter aloud; keep tmux/session alive, retry after unlock. Do not silently abandon.
 - New API keys: immediately store in 1Password service account via `$one-password`; temp files/env only for current task.
 - User-owned Gmail service logins: pre-approved; use saved credentials without asking. Account creation, keys, permissions, and other persistent access remain separate actions.
-- Email/Google account for testing: use `gog+clawdbot@gmail.com`.
+- Email/Google account for testing: use `clawdbot@gmail.com`.
 - OpenClaw deployments: use `service@openclaw.org` accounts only.
 
 ## Project Defaults

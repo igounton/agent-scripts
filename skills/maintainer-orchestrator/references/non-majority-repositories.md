@@ -25,6 +25,8 @@ Snapshot: 2026-07-01. Metric: Peter-authored non-merge commits divided by author
 | [openclaw/gitcrawl](https://github.com/openclaw/gitcrawl) | 162 / 430 | Vincent Koc: 251 |
 | [openclaw/gitcrawl-store](https://github.com/openclaw/gitcrawl-store) | 13 / 62 | generated publisher history filtered from responsibility metric |
 | [openclaw/graincrawl](https://github.com/openclaw/graincrawl) | 12 / 115 | Vincent Koc: 101 |
+| [openclaw/hermit](https://github.com/openclaw/hermit) | 0 / 122 | Shadow: 114 |
+| [openclaw/libterminal](https://github.com/openclaw/libterminal) | 0 / 56 | Vincent Koc: 56; Dependabot filtered |
 | [openclaw/krillswitch](https://github.com/openclaw/krillswitch) | 0 / 35 | Jesse Merhi: 22 |
 | [openclaw/lobster](https://github.com/openclaw/lobster) | 27 / 110 | Vignesh Natarajan identities lead |
 | [openclaw/multipass](https://github.com/openclaw/multipass) | 12 / 80 | Vincent Koc: 43; Dallin Romney: 23 |
@@ -37,6 +39,7 @@ Snapshot: 2026-07-01. Metric: Peter-authored non-merge commits divided by author
 | [openclaw/rfcs](https://github.com/openclaw/rfcs) | 4 / 35 | Gio Della-Libera: 11 |
 | [openclaw/shellbench](https://github.com/openclaw/shellbench) | 3 / 120 | scoootscooob identities: 56; Codex: 26 |
 | [openclaw/slacrawl](https://github.com/openclaw/slacrawl) | 79 / 197 | Vincent Koc: 107 |
+| [openclaw/uirouter](https://github.com/openclaw/uirouter) | 0 / 59 | Shakker identities: 54; Vincent Koc: 5 |
 | [steipete/iterm-mcp](https://github.com/steipete/iterm-mcp) | 2 / 67 | Ferris Lucas: 59 |
 | [steipete/nemoforge](https://github.com/steipete/nemoforge) | 3 / 146 | antirez: 102 |
 | [martian-engineering/lossless-claw](https://github.com/martian-engineering/lossless-claw) | 1 / 440 | Josh Lehman: 245; automation identities filtered |

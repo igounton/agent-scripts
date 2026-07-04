@@ -72,7 +72,7 @@ Target the session as `$SESSION:` instead of assuming window `0`; older sessions
 ## Service-Specific Workflows
 
 - Keep service-specific auth details in the owning skill.
-- For npm registry/package work, use `$npm`; it documents the `npmjs` item, username/password/TOTP flow, and package reservation helper.
+- For npm registry/package work, use `$npm`; it documents the Molty service-account item, non-interactive auth wrapper, and package reservation helper.
 - This skill owns only the generic 1Password rules: tmux-only `op`, targeted reads, one persistent session, no broad enumeration, no secret output.
 
 ## Known working secret-write pattern
