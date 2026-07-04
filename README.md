@@ -26,9 +26,10 @@ Rules:
 - Validate after edits: `scripts/validate-skills`.
 - Quote `description` in front matter.
 
-Global discovery usually points here:
-- `~/.codex/skills -> ~/Projects/agent-scripts/skills`
-- `~/.claude/skills -> ~/Projects/agent-scripts/skills`
+Global discovery is built by `scripts/sync-skills` (idempotent; run on every Mac after cloning or adding skills):
+- Codex scans nested dirs, so it gets whole-root links: `~/.codex/skills/agent-scripts -> ~/Projects/agent-scripts/skills`, `~/.codex/skills/manager -> ~/Projects/manager/skills`.
+- Claude Code loads only `~/.claude/skills/<name>/SKILL.md` (exactly one level deep; per-entry symlinks are followed, category subfolders are not scanned — verified on 2.1.197). It gets a flat per-skill link mirror covering both repos plus machine-local `~/.codex/skills/<name>` extras.
+- Name collisions resolve agent-scripts > manager > codex-local; the script prints skipped duplicates and prunes broken/stale managed links.
 
 Shared personal skills live as real folders in `skills/`. Public OpenClaw shared skills live in `../agent-skills` and are exposed here with tracked relative symlinks. Repo-owned skills stay canonical in their repo and are exposed here the same way, for example:
 
@@ -43,7 +44,7 @@ Current symlinked repo-owned skills include `birdclaw`, `discrawl`, `gog`, `imsg
 
 Shared hard rules live in `AGENTS.MD`.
 
-Global setup:
+Global setup (also maintained by `scripts/sync-skills`; Claude Code reads `CLAUDE.md` only, so it links to the shared `AGENTS.MD`):
 - `~/.codex/AGENTS.md -> ~/Projects/agent-scripts/AGENTS.MD`
 - `~/.claude/CLAUDE.md -> ~/Projects/agent-scripts/AGENTS.MD`
 - `~/.claude/AGENTS.md -> ~/Projects/agent-scripts/AGENTS.MD`
@@ -62,6 +63,10 @@ Repo-specific rules go below that pointer. Do not copy the shared blocks into do
 - Stages exactly the listed files.
 - Enforces a non-empty commit message.
 - Runs skill validation before committing.
+
+`scripts/sync-skills`
+- Builds the per-machine skill mirror: Codex whole-root links, Claude flat per-skill links, shared `AGENTS.MD` pointers.
+- Idempotent; prints changes only, prunes broken/stale managed links, never clobbers real files.
 
 `scripts/validate-skills`
 - Checks every `skills/*/SKILL.md`.

@@ -4,6 +4,9 @@ summary: Timeline of guardrail helper changes mirrored from Sweetistics and rela
 
 # Changelog
 
+## 2026-07-03 — Claude Skill Mirror
+- Added `scripts/sync-skills`: builds the per-machine skill mirror (Codex whole-root links, flat per-skill Claude links with agent-scripts > manager > codex-local priority, shared `AGENTS.MD` pointers) since Claude Code only scans `~/.claude/skills` one level deep; documented the layout in the README.
+
 ## 2026-07-02 — npm Credential Field Safety
 - Added a reusable npm publish helper that prefers canonical 1Password field IDs, rejects ambiguous duplicate labels, verifies registry publication, and shares the hardened login path with package reservation.
 
