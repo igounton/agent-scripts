@@ -29,6 +29,7 @@ Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
 
 ## Routing
 
+- Claude Code sessions: implementation/refactor/test/fix work defaults to `$codex-first` (GPT-5.5+ writes faster/better code, flat-rate; Claude specs, reviews, verifies). Design/API design/tiny edits stay direct. Codex sessions ignore.
 - Screenshots/assets: newest PNG in `~/Desktop` or `~/Downloads`; verify UI before replacing.
 - Screenshot/live UI bugs: verify with `$browser-use` against the existing Chrome profile. `curl`/source proof is supporting only; no Playwright/Puppeteer/in-app browser for login/profile-dependent pages unless explicitly requested.
 - Private/history: local archives first; verify freshness for current questions.
