@@ -428,7 +428,8 @@ probe_sparkle_key() {
     sign_update --ed-key-file "$keyfile" -p "$tmp" >/dev/null
   else
     mac_release_sparkle_account_args account_args
-    sign_update "${account_args[@]}" -p "$tmp" >/dev/null
+    # ${arr[@]+...} keeps empty arrays safe under set -u on macOS bash 3.2
+    sign_update ${account_args[@]+"${account_args[@]}"} -p "$tmp" >/dev/null
   fi
   rm -f "$tmp"
 }
@@ -781,7 +782,8 @@ verify_enclosure() {
     sign_update --verify "$tmp" "$sig" --ed-key-file "$key_file"
   else
     mac_release_sparkle_account_args account_args
-    sign_update "${account_args[@]}" --verify "$tmp" "$sig"
+    # ${arr[@]+...} keeps empty arrays safe under set -u on macOS bash 3.2
+    sign_update ${account_args[@]+"${account_args[@]}"} --verify "$tmp" "$sig"
   fi
 }
 
