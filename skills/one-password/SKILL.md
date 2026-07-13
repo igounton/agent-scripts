@@ -46,8 +46,16 @@ Exact titles; go straight to the service-account read. No enumeration needed.
 | Cloudflare (OpenClaw services) | `OpenClaw Services Cloudflare API Token` | `credential` |
 | Sparkle signing | `Nameplate Sparkle EdDSA` | `private key` |
 | Octopool | `Octopool Proxy Secret`, `Octopool Admin Token (OpenClaw account)` | `credential` |
+| GitHub PAT | `GitHub Personal Access Token`, `GitHub Personal Access Token Xcode 26` | `credential` |
+| Crabyard deploy | `Cloudflare OpenClaw Crabyard Deploy Token` | `credential` |
+| Hetzner (crabyard) | `API Key - Hetzner Cloud - OpenClaw - crabyard-ssh-gateway` | `credential` |
+| Anthropic (Peekaboo) | `Anthropic API Key - Peekaboo Live Test` | `credential` |
+| ClickClack deploy | `Cloudflare ClickClack deploy token`, `Cloudflare ClickClack R2 uploads` | `credential` |
+| Barnacle | `GitHub Token Barnacle` | `credential` |
 
-Outside Molty by design (desktop path, consent first): `OpenClaw Developer ID Release Keychain` (`OpenClaw-Core` vault), npm interactive login+OTP (`Private/Npmjs`), personal SSH/signing keys.
+ClickClack/Barnacle Molty items are agent copies; canonical items live in the shared `OpenClaw` vault — on rotation update both.
+
+Outside Molty by design (desktop path, consent first): `OpenClaw Developer ID Release Keychain` (`OpenClaw-Core` vault), npm interactive login+OTP (`Private/Npmjs`), personal SSH/signing keys. Twilio has no API credential stored anywhere — only a console login (Private); minting one needs the console.
 
 ## Workflow
 
