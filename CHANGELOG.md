@@ -4,6 +4,9 @@ summary: Timeline of guardrail helper changes mirrored from Sweetistics and rela
 
 # Changelog
 
+## 2026-07-13 — Global Workflow Rules
+- Simplified shared agent policy around workflow-owned operations, made autoreview universal before commit or land, separated GitHub shipping from explicitly authorized publication, and removed obsolete upstream-temp, screenshot-selection, and blanket file-deletion restrictions.
+
 ## 2026-07-11 — Browser Tools Hardening
 - Removed shell interpretation from browser profile setup, preserved relative symlinks while copying profiles, and fixed the `--no-serialize` console flag. Thanks @ShiroKSH.
 
