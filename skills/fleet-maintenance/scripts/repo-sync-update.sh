@@ -56,6 +56,16 @@ check_git_locks() {
   [[ -s "$output" ]]
 }
 
+has_symlink_parent() {
+  local repo=$1
+  local path=$2
+  while [[ "$path" == */* ]]; do
+    path=${path%/*}
+    [[ -L "$repo/$path" ]] && return 0
+  done
+  return 1
+}
+
 collect_local_paths() {
   local repo=$1
   local output=$2
@@ -74,23 +84,27 @@ collect_local_paths() {
       printf '%s\0' "${record:2}" >>"$collisions"
     fi
   done <"$output.index-flags"
-  {
-    cat "$output.tracked" "$output.untracked"
-    while IFS= read -r -d '' path; do
-      check=$path
-      while [[ -n "$check" ]]; do
-        if [[ -e "$repo/$check" || -L "$repo/$check" ]] &&
-          ! git -C "$repo" ls-files --error-unmatch -- "$check" >/dev/null 2>&1 &&
-          git -C "$repo" check-ignore -q -- "$check"; then
-          printf '%s\0' "$check"
-          printf '%s\0' "$check" >>"$collisions"
-          break
-        fi
-        [[ "$check" == */* ]] || break
-        check=${check%/*}
-      done
-      done <"$output.incoming"
-  } >"$output"
+  : >"$output.existing-incoming"
+  while IFS= read -r -d '' path; do
+    check=$path
+    while [[ -n "$check" ]]; do
+      if [[ -e "$repo/$check" || -L "$repo/$check" ]] &&
+        ! has_symlink_parent "$repo" "$check"; then
+        printf '%s\0' "$check" >>"$output.existing-incoming"
+      fi
+      [[ "$check" == */* ]] || break
+      check=${check%/*}
+    done
+  done <"$output.incoming"
+
+  ignore_rc=0
+  git -C "$repo" check-ignore -z --stdin \
+    <"$output.existing-incoming" >"$output.ignored-incoming" || ignore_rc=$?
+  if (( ignore_rc > 1 )); then
+    return 1
+  fi
+  cat "$output.ignored-incoming" >>"$collisions"
+  cat "$output.tracked" "$output.untracked" >"$output"
 }
 
 snapshot_local_content() {
