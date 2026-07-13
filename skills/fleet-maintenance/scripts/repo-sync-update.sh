@@ -74,7 +74,6 @@ collect_local_paths() {
   : >"$collisions"
   if ! git -C "$repo" diff --name-only -z HEAD >"$output.tracked" ||
     ! git -C "$repo" ls-files --others --exclude-standard -z >"$output.untracked" ||
-    ! git -C "$repo" diff --name-only -z "HEAD..$upstream" >"$output.incoming" ||
     ! git -C "$repo" ls-files -v -z >"$output.index-flags"; then
     return 1
   fi
@@ -84,6 +83,17 @@ collect_local_paths() {
       printf '%s\0' "${record:2}" >>"$collisions"
     fi
   done <"$output.index-flags"
+  cat "$output.tracked" "$output.untracked" >"$output"
+  if [[ -s "$collisions" ]]; then
+    return 0
+  fi
+  # Clean visible state is protected by merge --no-overwrite-ignore below.
+  if [[ ! -s "$output.tracked" && ! -s "$output.untracked" ]]; then
+    return 0
+  fi
+  if ! git -C "$repo" diff --name-only -z "HEAD..$upstream" >"$output.incoming"; then
+    return 1
+  fi
   : >"$output.existing-incoming"
   while IFS= read -r -d '' path; do
     check=$path
@@ -104,7 +114,6 @@ collect_local_paths() {
     return 1
   fi
   cat "$output.ignored-incoming" >>"$collisions"
-  cat "$output.tracked" "$output.untracked" >"$output"
 }
 
 snapshot_local_content() {
