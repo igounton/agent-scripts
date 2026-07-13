@@ -57,6 +57,14 @@ ssh -o RequestTTY=no -o RemoteCommand=none HOST 'bash -s -- "$HOME/Projects" 3' 
   < skills/fleet-maintenance/scripts/repo-sync-audit.sh
 ```
 
+Apply the audited policy with the bundled updater. It rechecks safety, fetches noninteractively, fast-forwards clean or conflict-free dirty worktrees, and isolates refusals:
+
+```bash
+skills/fleet-maintenance/scripts/repo-sync-update.sh ~/Projects 3
+ssh -o RequestTTY=no -o RemoteCommand=none HOST \
+  '"$HOME/Projects/agent-scripts/skills/fleet-maintenance/scripts/repo-sync-update.sh" "$HOME/Projects" 3'
+```
+
 Only process rows marked `candidate`. Recheck branch, upstream, Git locks, and active process cwd immediately before mutation, then:
 
 ```bash
@@ -69,7 +77,7 @@ Run fetches noninteractively and bound each one (for example five minutes). On t
 Interpret counts as `ahead behind`:
 
 - `0 0`: current; no action.
-- `0 N`: inspect `git log --oneline HEAD..@{upstream}` and `git diff --stat HEAD..@{upstream}`. Record `HEAD` and worktree status. Run `git merge --ff-only @{upstream}` without stash or autostash. A clean worktree should advance. A dirty worktree may advance only when Git can preserve every local change without overlap; Git refusal means `skip-local-overlap`, not an error to repair. After success, require no unmerged entries, the expected upstream commit at `HEAD`, and all prior local modifications still present. After refusal, require unchanged `HEAD`, no unmerged entries, and unchanged worktree status.
+- `0 N`: inspect `git log --oneline HEAD..@{upstream}` and `git diff --stat HEAD..@{upstream}`. Record `HEAD` and worktree status. Run `git merge --ff-only --no-autostash --no-overwrite-ignore @{upstream}`. A clean worktree should advance. A dirty worktree may advance only when Git can preserve every local change without overlap; Git refusal means `skip-local-overlap`, not an error to repair. After success, require no unmerged entries, the expected upstream commit at `HEAD`, and all prior local modifications still present. After refusal, require unchanged `HEAD`, no unmerged entries, and unchanged worktree status.
 - `N 0` or `N M`: inspect local commit subjects/authors and `git diff --stat @{upstream}...HEAD`; explain likely intent and escalate. Never push or rewrite.
 - detached/no upstream/fetch failure: understand remotes, branches, recent commits, and worktree state; escalate with the smallest useful decision.
 

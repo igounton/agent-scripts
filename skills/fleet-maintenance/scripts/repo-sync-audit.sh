@@ -3,6 +3,7 @@ set -euo pipefail
 
 root=${1:-"$HOME/Projects"}
 days=${2:-3}
+format=${3:-tsv}
 
 if [[ ! -d "$root" ]]; then
   printf 'project root not found: %s\n' "$root" >&2
@@ -10,6 +11,10 @@ if [[ ! -d "$root" ]]; then
 fi
 if ! [[ "$days" =~ ^[1-9][0-9]*$ ]]; then
   printf 'days must be a positive integer\n' >&2
+  exit 2
+fi
+if [[ "$format" != tsv && "$format" != nul ]]; then
+  printf 'format must be tsv or nul\n' >&2
   exit 2
 fi
 root=$(cd "$root" && pwd -P)
@@ -26,7 +31,9 @@ if ! lsof -a -u "$USER" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' > "$cwd_file";
   exit 3
 fi
 
-printf 'repo\tpath\tbranch\tupstream\tdirty\trecent\tactive\tgit_lock\tdecision\n'
+if [[ "$format" == tsv ]]; then
+  printf 'repo\tpath\tbranch\tupstream\tdirty\trecent\tactive\tgit_lock\tdecision\n'
+fi
 
 discover_repos() {
   local dir=$1
@@ -127,6 +134,10 @@ while IFS= read -r -d '' repo; do
     decision=escalate-no-upstream
   fi
 
-  printf 'repo\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-    "$repo" "$branch" "$upstream" "$dirty" "$recent" "$active" "$git_lock" "$decision"
+  if [[ "$format" == nul ]]; then
+    printf '%s\0' repo "$repo" "$branch" "$upstream" "$dirty" "$recent" "$active" "$git_lock" "$decision"
+  else
+    printf 'repo\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+      "$repo" "$branch" "$upstream" "$dirty" "$recent" "$active" "$git_lock" "$decision"
+  fi
 done < "$repo_file"
