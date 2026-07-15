@@ -644,9 +644,11 @@ if not first:
 header = first.group(1)
 if "Unreleased" in header:
     raise SystemExit("Top changelog section still marked Unreleased")
-if not (header.startswith(f"{version} ") or header.startswith(f"{version} -") or header.startswith(f"{version} —")):
+version_token = rf"(?:{re.escape(version)}|\[{re.escape(version)}\])"
+version_header = re.compile(rf"^{version_token}(?:\s+.*)?$")
+if not version_header.fullmatch(header):
     raise SystemExit(f"Top changelog section '{header}' does not match version {version}")
-if not re.search(rf"^##\s+{re.escape(version)}(\s|$)", text, re.M):
+if not re.search(rf"^##\s+{version_token}(?:\s|$)", text, re.M):
     raise SystemExit(f"No section found for version {version}")
 PY
 }
