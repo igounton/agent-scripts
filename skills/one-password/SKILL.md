@@ -1,12 +1,16 @@
 ---
 name: one-password
 description: "1Password/op: service-account first, targeted secret read/store/inject, tmux."
-metadata: {"clawdbot":{"emoji":"🔐","requires":{"bins":["op","tmux"]},"install":[{"id":"brew","kind":"brew","formula":"1password-cli","bins":["op"],"label":"Install 1Password CLI (brew)"}]}}
+metadata: {"clawdbot":{"emoji":"🔐","requires":{"bins":["op","tmux"]}}}
 ---
 
 # 1Password CLI
 
-Follow the official CLI get-started steps. Don't guess install commands.
+## Install (stable path only — never brew)
+
+`op` lives at `~/bin/op` on all of Peter's Macs, with a compat symlink `/opt/homebrew/bin/op -> ~/bin/op`. Do NOT install/upgrade via the Homebrew cask: its versioned Caskroom path gives `op` a new macOS TCC identity on every upgrade, which re-fires the App Data Protection dialog at Peter. To update: download the official signed pkg from https://app-updates.agilebits.com/product_history/CLI2, `pkgutil --check-signature` (AgileBits 2BUA8C4S2C) + `pkgutil --expand-full`, then `install -m 755 <payload>/op ~/bin/op`. Same path forever = TCC grant persists.
+
+Follow the official CLI get-started steps for anything else. Don't guess install commands.
 
 ## References
 
